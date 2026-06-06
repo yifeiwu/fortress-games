@@ -1,13 +1,13 @@
 import type { Direction, GameState, Player, Room, RoundChoice } from "@/lib/types";
 
-export interface GameCommandContext {
+interface GameCommandContext {
   now: number;
   actorPlayerId?: string;
 }
 
 export type GameActionPayload = Record<string, unknown>;
 
-export type GameCommand = {
+type GameCommand = {
   type: string;
   [key: string]: unknown;
 };

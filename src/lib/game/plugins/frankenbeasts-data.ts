@@ -12,7 +12,7 @@ export type FBAbilityEffect =
   | { kind: "trip" }
   | { kind: "pass" };
 
-export type FBPassiveEffect =
+type FBPassiveEffect =
   | { kind: "damage_reduction"; amount: number }
   | { kind: "damage_amplify"; amount: number }
   | { kind: "heal_per_round"; amount: number }
@@ -601,7 +601,7 @@ export function getBeastAbilities(headId: string, bodyId: string, tailId: string
   ];
 }
 
-export function getBeastPassives(headId: string, bodyId: string, tailId: string): FBPassiveEffect[] {
+function getBeastPassives(headId: string, bodyId: string, tailId: string): FBPassiveEffect[] {
   const head = FB_PARTS_BY_ID[headId];
   const body = FB_PARTS_BY_ID[bodyId];
   const tail = FB_PARTS_BY_ID[tailId];

@@ -1,8 +1,6 @@
 import { FB_BODIES, FB_HEADS, FB_TAILS, getBeastAbilities } from "@/lib/game/plugins/frankenbeasts-data";
 import type { FBCombatStatus } from "@/lib/types";
 
-export const FRANKENBEASTS_BOT_KEY = "frankenbeasts_random_bot";
-
 type Rng = () => number;
 
 function pickRandom<T>(items: readonly T[], rng: Rng): T {

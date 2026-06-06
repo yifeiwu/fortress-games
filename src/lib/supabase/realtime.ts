@@ -50,10 +50,6 @@ export async function publishRoomEvent(roomCode: string, event: string) {
   await sendBroadcast([{ topic: `room:${roomCode}`, event, payload: buildPayload(event, roomCode) }]);
 }
 
-export async function publishLobbyEvent(event: string, roomCode?: string) {
-  await sendBroadcast([{ topic: "lobby", event, payload: buildPayload(event, roomCode) }]);
-}
-
 /** Notifies both the room channel and the lobby channel in a single request. */
 export async function publishRoomAndLobby(roomCode: string, roomEvent: string, lobbyEvent: string = roomEvent) {
   await sendBroadcast([

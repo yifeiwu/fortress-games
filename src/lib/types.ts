@@ -1,7 +1,7 @@
 export type Direction = "up" | "down" | "left" | "right";
 
-export type RoomStatus = "lobby" | "in_game" | "ended";
-export type GameStatus = "waiting" | "intro" | "round_open" | "round_revealed" | "player_turn" | "enemy_phase" | "pick_phase" | "fight_round" | "fight_reveal" | "tarot_setup" | "tarot_reading" | "dice_roll" | "bidding" | "dice_reveal" | "finished";
+type RoomStatus = "lobby" | "in_game" | "ended";
+type GameStatus = "waiting" | "intro" | "round_open" | "round_revealed" | "player_turn" | "enemy_phase" | "pick_phase" | "fight_round" | "fight_reveal" | "tarot_setup" | "tarot_reading" | "dice_roll" | "bidding" | "dice_reveal" | "finished";
 export type SpaceshipActionType = "shoot" | "shield" | "charge_jump" | "jump_away" | "emergency_jump" | "pass";
 export type SpaceshipThreatKind = "raider" | "destroyer" | "missile" | "stealth_ship";
 
@@ -37,7 +37,7 @@ export interface RoundChoice {
   autoSubmitted: boolean;
 }
 
-export interface RoundRngRecord {
+interface RoundRngRecord {
   roundIndex: number;
   seedHash?: string;
   seedPlain?: string;
@@ -45,7 +45,7 @@ export interface RoundRngRecord {
   revealedAt?: number;
 }
 
-export interface ScoreEntry {
+interface ScoreEntry {
   playerId: string;
   points: number;
 }
@@ -78,7 +78,7 @@ export interface SpaceshipThreat {
   oneShot: boolean;
 }
 
-export interface SpaceshipLogEntry {
+interface SpaceshipLogEntry {
   id: string;
   message: string;
   createdAt: number;
@@ -216,16 +216,16 @@ export interface PlayerSession {
 
 // ─── FrankenBeasts ───────────────────────────────────────────────────────────
 
-export type FBPartSlot = "head" | "body" | "tail";
+type FBPartSlot = "head" | "body" | "tail";
 
-export interface FBPendingPick {
+interface FBPendingPick {
   headId?: string;
   bodyId?: string;
   tailId?: string;
   lockedIn: boolean;
 }
 
-export interface FBDamageBuff {
+interface FBDamageBuff {
   bonus: number;
   turnsRemaining: number;
 }
@@ -298,7 +298,7 @@ export interface TarotDrawnCard {
   reversed: boolean;
 }
 
-export interface TarotGameState {
+interface TarotGameState {
   /** Seeker name and question entered by the player; double as the RNG seed. */
   seekerName?: string;
   question?: string;
@@ -334,7 +334,7 @@ export interface LiarsDicePlayerState {
 }
 
 /** Snapshot of a resolved "Liar!" call, shown during the dice_reveal phase. */
-export interface LiarsDiceRevealState {
+interface LiarsDiceRevealState {
   bid: LiarsDiceBid;
   callerPlayerId: string;
   /** Actual count of dice showing `bid.face` across the whole table. */

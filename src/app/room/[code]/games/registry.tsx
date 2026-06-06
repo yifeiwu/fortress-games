@@ -23,7 +23,7 @@ const SpaceshipDefenseGame = dynamic(() =>
 );
 const TarotGame = dynamic(() => import("@/app/room/[code]/games/tarot-game").then((m) => m.TarotGame));
 
-export type ClientGameAction =
+type ClientGameAction =
   | { action: "submit_direction"; direction: Direction }
   | { action: "submit_spaceship_action"; spaceshipAction: SpaceshipActionType; targetThreatId?: string }
   | { action: "submit_pick"; headId: string; bodyId: string; tailId: string; lockIn: boolean }
@@ -33,7 +33,7 @@ export type ClientGameAction =
   | { action: "call_liar" }
   | { action: "flip_card" };
 
-export type RoomControlAction =
+type RoomControlAction =
   | { action: "leave" }
   | { action: "chat"; content: string }
   | { action: "start_game" }
@@ -56,7 +56,7 @@ interface GameRendererProps {
  * waiting room game-agnostic: it renders active/spectator badges and the note
  * from this config instead of branching on specific game types.
  */
-export interface LobbyConfig {
+interface LobbyConfig {
   /**
    * Caps active participants. The first players (by join order) up to this
    * count play; everyone else is shown as a spectator. Omit when every member

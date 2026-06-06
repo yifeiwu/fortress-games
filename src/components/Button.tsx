@@ -24,7 +24,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
  * (which can't be a <button>) can adopt the same look without duplicating the
  * Tailwind soup.
  */
-export function buttonClasses({
+function buttonClasses({
   variant = "primary",
   size = "md",
   className = ""

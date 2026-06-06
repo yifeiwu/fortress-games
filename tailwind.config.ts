@@ -27,12 +27,12 @@ const config: Config = {
           "100%": { transform: "scale(1)", opacity: "1" }
         },
         flashSuccess: {
-          "0%, 100%": { backgroundColor: "rgba(52,211,153,0)" },
-          "25%": { backgroundColor: "rgba(52,211,153,0.35)" }
+          "0%, 100%": { opacity: "0" },
+          "25%": { opacity: "1" }
         },
         flashDanger: {
-          "0%, 100%": { backgroundColor: "rgba(251,113,133,0)" },
-          "25%": { backgroundColor: "rgba(251,113,133,0.3)" }
+          "0%, 100%": { opacity: "0" },
+          "25%": { opacity: "1" }
         },
         confettiFall: {
           "0%": { transform: "translateY(-20%) rotate(0deg)", opacity: "1" },
@@ -142,6 +142,35 @@ const config: Config = {
           "65%": { transform: "rotate(196deg) translateY(6px)" },
           "82%": { transform: "rotate(174deg) translateY(0)" },
           "100%": { transform: "rotate(180deg) translateY(0)" }
+        },
+        // Win screen: the loser is launched off the stage, tumbling and fading.
+        koFlyoffLeft: {
+          "0%": { transform: "translate(0, 0) rotate(0deg)", opacity: "1" },
+          "22%": { transform: "translate(-44px, -22px) rotate(-30deg)", opacity: "1" },
+          "100%": { transform: "translate(-620px, 48px) rotate(-520deg)", opacity: "0" }
+        },
+        koFlyoffRight: {
+          "0%": { transform: "translate(0, 0) rotate(0deg)", opacity: "1" },
+          "22%": { transform: "translate(44px, -22px) rotate(30deg)", opacity: "1" },
+          "100%": { transform: "translate(620px, 48px) rotate(520deg)", opacity: "0" }
+        },
+        // Win screen: the winner winds up, drives across into the loser, holds at
+        // the point of contact, then strides back to center.
+        winnerLungeLeft: {
+          "0%": { transform: "translateX(0)" },
+          "12%": { transform: "translateX(16px)" },
+          "34%": { transform: "translateX(-150px)" },
+          "48%": { transform: "translateX(-150px)" },
+          "72%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(0)" }
+        },
+        winnerLungeRight: {
+          "0%": { transform: "translateX(0)" },
+          "12%": { transform: "translateX(-16px)" },
+          "34%": { transform: "translateX(150px)" },
+          "48%": { transform: "translateX(150px)" },
+          "72%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(0)" }
         }
       },
       animation: {
@@ -165,7 +194,11 @@ const config: Config = {
         "knockback-right": "knockbackRight 0.5s ease-out both",
         "stage-shake": "stageShake 0.45s ease-out both",
         "damage-float": "damageFloat 1s ease-out both",
-        "ko-topple": "koTopple 0.8s ease-out both"
+        "ko-topple": "koTopple 0.8s ease-out both",
+        "ko-flyoff-left": "koFlyoffLeft 1.1s ease-in both",
+        "ko-flyoff-right": "koFlyoffRight 1.1s ease-in both",
+        "winner-lunge-left": "winnerLungeLeft 0.9s ease-out both",
+        "winner-lunge-right": "winnerLungeRight 0.9s ease-out both"
       }
     }
   },

@@ -187,7 +187,7 @@ export const TAROT_CARDS_BY_ID: Record<string, TarotCard> = Object.fromEntries(
  * longer titles so every label sits at a similar length within the card's name
  * band (e.g. "The High Priestess" → "Priestess").
  */
-export const TAROT_SHORT_NAMES: Record<string, string> = {
+const TAROT_SHORT_NAMES: Record<string, string> = {
   the_fool: "The Fool",
   the_magician: "Magician",
   the_high_priestess: "Priestess",

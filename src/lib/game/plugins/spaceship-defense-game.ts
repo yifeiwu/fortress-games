@@ -776,7 +776,7 @@ function chooseSpaceshipBotAction(state: GameState): { action: SpaceshipActionTy
   return desired;
 }
 
-export function parseSpaceshipAction(input: string): SpaceshipActionType | null {
+function parseSpaceshipAction(input: string): SpaceshipActionType | null {
   if (
     input === "shoot" ||
     input === "shield" ||

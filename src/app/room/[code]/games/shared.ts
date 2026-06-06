@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /** Whole seconds remaining until `deadlineAt`, clamped at 0. */
-export function timeLeft(deadlineAt: number | undefined, now: number): number {
+function timeLeft(deadlineAt: number | undefined, now: number): number {
   if (!deadlineAt) return 0;
   return Math.max(0, Math.ceil((deadlineAt - now) / 1000));
 }

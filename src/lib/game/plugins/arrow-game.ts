@@ -294,7 +294,7 @@ export const arrowGameDefinition: GameDefinition = {
   }
 };
 
-export function parseDirection(input: string): Direction | null {
+function parseDirection(input: string): Direction | null {
   if (input === "up" || input === "down" || input === "left" || input === "right") {
     return input;
   }

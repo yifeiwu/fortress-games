@@ -533,7 +533,8 @@ function StageBeast({
   hit,
   defeated = false,
   centered = false,
-  aside = false,
+  knockoutOff = false,
+  lungeDir,
   artRef,
   chargeDistance,
   incomingContactMs = 0
@@ -545,8 +546,10 @@ function StageBeast({
   defeated?: boolean;
   /** Place this beast at center stage (used to spotlight the winner). */
   centered?: boolean;
-  /** Push this beast to the stage edge (the KO'd loser when a winner is centered). */
-  aside?: boolean;
+  /** Win screen: this defeated beast is knocked clean off the stage instead of toppling in place. */
+  knockoutOff?: boolean;
+  /** Win screen: the centered winner jabs this direction to deliver the knockout. */
+  lungeDir?: "left" | "right";
   /** Ref to the scaled art node, so the stage can measure the gap between beasts. */
   artRef?: RefObject<HTMLDivElement>;
   /** Lunge travel distance (px), measured by the stage so the attacker reaches its target. */
@@ -566,14 +569,11 @@ function StageBeast({
     hitMag >= 10 ? "text-4xl" : hitMag >= 6 ? "text-3xl" : hitMag >= 3 ? "text-2xl" : "text-xl";
   const contactDelay = incomingContactMs > 0 ? { animationDelay: `${incomingContactMs}ms` } : undefined;
 
-  // On the result screen the winner is spotlighted center-stage and the KO'd
-  // loser is stacked directly beneath it (centered too, just lower + behind), so
-  // the layout holds up even on narrow screens where there's no room to the side.
-  const vertical = centered ? "bottom-[30%] sm:bottom-[24%]" : aside ? "bottom-[-2%]" : "bottom-[7%]";
+  // On the result screen the winner is spotlighted center-stage; the loser keeps
+  // its own side and is knocked clean off the stage (see knockoutOff below).
+  const vertical = "bottom-[7%]";
   const anchorPos = centered
     ? "left-1/2 -translate-x-1/2 z-10"
-    : aside
-    ? "left-1/2 -translate-x-1/2 z-0"
     : side === "left"
     ? "left-[12%] sm:left-[21%]"
     : "right-[12%] sm:right-[21%]";
@@ -581,9 +581,20 @@ function StageBeast({
   // its opponent. Responsive scale keeps both beasts on-stage on small screens.
   const scaleMirror =
     side === "left"
-      ? "scale-y-[0.78] scale-x-[-0.78] sm:scale-y-[1.05] sm:scale-x-[-1.05] lg:scale-y-125 lg:scale-x-[-1.25]"
-      : "scale-[0.78] sm:scale-[1.05] lg:scale-125";
+      ? "scale-y-[0.66] scale-x-[-0.66] sm:scale-y-[0.89] sm:scale-x-[-0.89] lg:scale-y-[1.06] lg:scale-x-[-1.06]"
+      : "scale-[0.66] sm:scale-[0.89] lg:scale-[1.06]";
   const chargeAnim = side === "left" ? "animate-charge-right" : "animate-charge-left";
+  // The winner's celebratory knockout jab (finished screen only).
+  const lungeAnim = lungeDir === "left" ? "animate-winner-lunge-left" : lungeDir === "right" ? "animate-winner-lunge-right" : undefined;
+  // KO'd beasts either topple in place (mid-fight / draw) or, on the win screen,
+  // get launched off the stage in their own direction shortly after the jab lands.
+  const koAnim = defeated
+    ? knockoutOff
+      ? side === "left"
+        ? "animate-ko-flyoff-left"
+        : "animate-ko-flyoff-right"
+      : "animate-ko-topple"
+    : undefined;
 
   return (
     <div className={`absolute ${vertical} ${anchorPos} flex w-40 max-w-[46%] flex-col items-center sm:w-44`}>
@@ -591,7 +602,7 @@ function StageBeast({
       <div className="relative">
         <div
           key={`charge-${chargeKey}`}
-          className={charging ? chargeAnim : undefined}
+          className={charging ? chargeAnim : lungeAnim}
           style={chargeDistance != null ? ({ "--charge-distance": `${chargeDistance}px` } as CSSProperties) : undefined}
         >
           {/* Recoil away from the attacker; delayed so it lands on contact. */}
@@ -601,8 +612,11 @@ function StageBeast({
             style={damaged ? ({ "--kb": `${knockbackPx}px`, ...contactDelay } as CSSProperties) : undefined}
           >
             <div className="animate-float-slow">
-              {/* Defeated beasts topple upside down (KO'd) rather than greyed out. */}
-              <div className={defeated ? "animate-ko-topple" : undefined}>
+              {/* KO: topple in place, or get launched off the stage on the win screen. */}
+              <div
+                className={koAnim}
+                style={knockoutOff ? ({ animationDelay: "320ms" } as CSSProperties) : undefined}
+              >
                 <div ref={artRef} className={`origin-bottom ${scaleMirror}`}>
                   <BeastPortrait headId={status.headId} bodyId={status.bodyId} tailId={status.tailId} size="lg" />
                 </div>
@@ -614,10 +628,15 @@ function StageBeast({
         {hit ? (
           <div
             key={`flash-${hitKey}`}
-            className={`pointer-events-none absolute inset-0 rounded-xl ${
+            className={`pointer-events-none absolute -inset-6 blur-2xl ${
               damaged ? "animate-flash-danger" : "animate-flash-success"
             }`}
-            style={contactDelay}
+            style={{
+              ...contactDelay,
+              background: damaged
+                ? "radial-gradient(circle at center, rgba(251,113,133,0.6) 0%, rgba(251,113,133,0.25) 45%, transparent 70%)"
+                : "radial-gradient(circle at center, rgba(52,211,153,0.6) 0%, rgba(52,211,153,0.25) 45%, transparent 70%)"
+            }}
             aria-hidden="true"
           />
         ) : null}
@@ -732,10 +751,6 @@ function BattleStage({
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-slate-950/25" />
 
-          <div className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-0.5 text-xs font-black tracking-[0.2em] text-cyan-200 ring-1 ring-white/10">
-            VS
-          </div>
-
           <StageBeast
             side="left"
             status={left.status}
@@ -743,7 +758,8 @@ function BattleStage({
             hit={leftChange}
             defeated={leftDefeated}
             centered={centerSide === "left"}
-            aside={centerSide != null && centerSide !== "left"}
+            knockoutOff={centerSide != null && centerSide !== "left"}
+            lungeDir={centerSide === "left" ? "right" : undefined}
             artRef={leftArtRef}
             chargeDistance={chargeDistance}
             incomingContactMs={rightCharging ? CHARGE_CONTACT_MS : 0}
@@ -755,7 +771,8 @@ function BattleStage({
             hit={rightChange}
             defeated={rightDefeated}
             centered={centerSide === "right"}
-            aside={centerSide != null && centerSide !== "right"}
+            knockoutOff={centerSide != null && centerSide !== "right"}
+            lungeDir={centerSide === "right" ? "left" : undefined}
             artRef={rightArtRef}
             chargeDistance={chargeDistance}
             incomingContactMs={leftCharging ? CHARGE_CONTACT_MS : 0}

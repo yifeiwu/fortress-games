@@ -5,7 +5,6 @@ import type { GameState, Player, TarotDrawnCard } from "@/lib/types";
 
 const MAX_NAME_LENGTH = 40;
 const MAX_QUESTION_LENGTH = 200;
-const SPREAD_SIZE = TAROT_POSITIONS.length;
 
 function createEmptyScores(players: Player[]): Record<string, number> {
   const scores: Record<string, number> = {};
@@ -129,5 +128,3 @@ export const tarotGameDefinition: GameDefinition = {
     return false;
   }
 };
-
-export const TAROT_SPREAD_SIZE = SPREAD_SIZE;

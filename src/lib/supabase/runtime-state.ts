@@ -52,7 +52,7 @@ function isUniqueViolation(error: unknown): boolean {
 // ─── Generic versioned runtime-state CRUD ────────────────────────────────────
 
 /** A versioned row keyed by an arbitrary primary-key column. */
-export interface VersionedRow<T> {
+interface VersionedRow<T> {
   key: string;
   payload: T;
   version: number;
@@ -68,7 +68,7 @@ export interface VersionedRow<T> {
  * - `update`/`remove` require the expected version and raise a
  *   {@link RuntimeStateConflictError} when another writer got there first.
  */
-export interface VersionedRuntimeStateRepository<T> {
+interface VersionedRuntimeStateRepository<T> {
   fetchAll(): Promise<VersionedRow<T>[]>;
   fetchOne(key: string): Promise<VersionedRow<T> | null>;
   insert(key: string, payload: T): Promise<number>;
