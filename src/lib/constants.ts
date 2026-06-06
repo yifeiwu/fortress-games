@@ -1,0 +1,2 @@
+export const MAX_ROOM_PLAYERS = 12;
+export const FRANKENBEASTS_PLAYER_COUNT = 2;

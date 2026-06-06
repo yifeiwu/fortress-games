@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- bony club tail: flared spiky base (left) -> shaft -> big round club ball (right) -->
+  <!-- base rim spikes -->
+  <g fill="#cdbfa6" stroke="#241a14" stroke-width="1.7" stroke-linejoin="round">
+    <polygon points="10,33 16,35 9,27"/>
+    <polygon points="11,67 17,65 10,73"/>
+  </g>
+  <!-- shaft + flared base -->
+  <path d="M0 34
+           C8 33 14 34 16 36
+           C30 40 46 46 60 49
+           C64 49.5 66 50 67 50
+           C66 50 64 50.5 60 51
+           C46 54 30 60 16 64
+           C14 66 8 67 0 66 Z"
+        fill="#7d7163" stroke="#241a14" stroke-width="2" stroke-linejoin="round"/>
+  <!-- shaft under-shade -->
+  <path d="M16 64 C30 60 46 54 60 51 C46 53 30 58 16 62 Z" fill="#5a5044" opacity="0.6" stroke="none"/>
+  <!-- shaft top highlight -->
+  <path d="M16 37 C30 41 46 46 60 49 C46 45 30 40 16 39 Z" fill="#a79a86" opacity="0.6" stroke="none"/>
+  <!-- little bony spikes along shaft -->
+  <g fill="#cdbfa6" stroke="#241a14" stroke-width="1.4" stroke-linejoin="round">
+    <polygon points="22,39 28,40 25,31"/>
+    <polygon points="33,42 39,43 36,34"/>
+    <polygon points="44,45 50,46 47,38"/>
+  </g>
+  <g fill="#cdbfa6" stroke="#5a5044" stroke-width="1" stroke-linejoin="round" opacity="0.9">
+    <ellipse cx="26" cy="52" rx="3" ry="2"/>
+    <ellipse cx="37" cy="55" rx="3" ry="2"/>
+    <ellipse cx="48" cy="55" rx="2.6" ry="1.8"/>
+  </g>
+  <!-- big lumpy club ball -->
+  <circle cx="80" cy="50" r="16" fill="#7d7163" stroke="#241a14" stroke-width="2"/>
+  <g fill="#7d7163" stroke="#5a5044" stroke-width="1.1">
+    <circle cx="74" cy="43" r="8"/>
+    <circle cx="86" cy="45" r="8"/>
+    <circle cx="75" cy="58" r="8"/>
+    <circle cx="87" cy="57" r="7.5"/>
+  </g>
+  <!-- redraw ball outline on top so it stays clean -->
+  <circle cx="80" cy="50" r="16" fill="none" stroke="#241a14" stroke-width="2"/>
+  <!-- ball highlight + speckle shade -->
+  <path d="M70 42 C74 38 80 37 84 39 C78 39 73 42 71 46 C70 45 70 43 70 42 Z" fill="#a79a86" opacity="0.7" stroke="none"/>
+  <g fill="#5a5044" opacity="0.5" stroke="none">
+    <circle cx="84" cy="56" r="1.2"/>
+    <circle cx="78" cy="60" r="1"/>
+    <circle cx="88" cy="49" r="1"/>
+    <circle cx="74" cy="52" r="0.9"/>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Fortress Games">
+  <rect width="64" height="64" rx="14" fill="#0b1220"/>
+  <!-- flag -->
+  <line x1="32" y1="16" x2="32" y2="8" stroke="#e2e8f0" stroke-width="2"/>
+  <path d="M32 8 L42 11 L32 14 Z" fill="#fb7185"/>
+  <!-- crenellated keep -->
+  <path d="M18 30 h4 v-5 h5 v5 h5 v-5 h5 v5 h5 v-5 h5 v5 h4 v22 H18 Z" fill="#38bdf8"/>
+  <!-- gate -->
+  <path d="M28 52 v-9 a4 4 0 0 1 8 0 v9 Z" fill="#0b1220"/>
+</svg>

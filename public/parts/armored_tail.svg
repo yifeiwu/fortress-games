@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- heavily armored plated tail tapering to a tip; base seam at left x=0, y34..66 -->
+  <!-- body silhouette -->
+  <path d="M0 34
+           L16 33
+           C46 36 70 44 84 47
+           C88 48 91 49 92 50
+           C91 51 88 52 84 53
+           C70 56 46 64 16 67
+           L0 66 Z"
+        fill="#8d949c" stroke="#241a14" stroke-width="2" stroke-linejoin="round"/>
+  <!-- top highlight band -->
+  <path d="M16 35 C46 37 70 45 84 48 C70 47 46 39 16 38 Z"
+        fill="#c3c9cf" opacity="0.7" stroke="none"/>
+  <!-- under shade -->
+  <path d="M16 66 C46 63 70 55 84 52 C70 56 46 64 16 67 Z"
+        fill="#5f656d" opacity="0.6" stroke="none"/>
+  <!-- overlapping plate chevrons (point right) + rivets -->
+  <g fill="none" stroke="#3f444b" stroke-width="1.6" stroke-linejoin="round">
+    <polyline points="30,36 35,50 30,64"/>
+    <polyline points="42,38 47,50 42,62"/>
+    <polyline points="53,40 58,50 53,60"/>
+    <polyline points="63,42 67,50 63,58"/>
+    <polyline points="71,44 75,50 71,56"/>
+    <polyline points="78,45 81,50 78,55"/>
+  </g>
+  <g fill="#3a3e44" stroke="#1f2226" stroke-width="0.8">
+    <circle cx="24" cy="60" r="1.9"/>
+    <circle cx="37" cy="59" r="1.7"/>
+    <circle cx="48" cy="58" r="1.5"/>
+    <circle cx="59" cy="56" r="1.4"/>
+    <circle cx="68" cy="55" r="1.2"/>
+    <circle cx="76" cy="54" r="1.1"/>
+  </g>
+  <!-- riveted base collar -->
+  <path d="M0 33 L11 33 L11 67 L0 66 Z" fill="#6f757d" stroke="#241a14" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="11" y1="34" x2="11" y2="66" stroke="#3f444b" stroke-width="1.4"/>
+  <g fill="#3a3e44" stroke="#1f2226" stroke-width="0.8">
+    <circle cx="5.5" cy="39" r="1.8"/>
+    <circle cx="5.5" cy="50" r="1.8"/>
+    <circle cx="5.5" cy="61" r="1.8"/>
+  </g>
+  <!-- pointed tip highlight -->
+  <path d="M84 48 C88 48.5 91 49.4 92 50 C90 49.6 87 49.2 84 49 Z" fill="#c3c9cf" opacity="0.8" stroke="none"/>
+</svg>

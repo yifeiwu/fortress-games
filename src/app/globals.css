@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-bg text-slate-100;
+}
+
+/* Rendered game-rule docs (see /rules/[game]). */
+.rules-doc {
+  @apply text-slate-200 leading-relaxed;
+}
+.rules-doc h1 {
+  @apply mt-0 mb-3 text-3xl font-bold text-slate-50;
+}
+.rules-doc h2 {
+  @apply mt-8 mb-3 border-b border-slate-700 pb-1 text-2xl font-semibold text-slate-100;
+}
+.rules-doc h3 {
+  @apply mt-6 mb-2 text-lg font-semibold text-slate-100;
+}
+.rules-doc p {
+  @apply my-3;
+}
+.rules-doc ul {
+  @apply my-3 list-disc space-y-1 pl-6;
+}
+.rules-doc ol {
+  @apply my-3 list-decimal space-y-1 pl-6;
+}
+.rules-doc a {
+  @apply text-accent hover:underline;
+}
+.rules-doc code {
+  @apply rounded bg-slate-800 px-1.5 py-0.5 text-sm text-cyan-200;
+}
+.rules-doc pre {
+  @apply my-4 overflow-x-auto rounded-lg bg-slate-900 p-4;
+}
+.rules-doc pre code {
+  @apply bg-transparent p-0 text-slate-200;
+}
+.rules-doc hr {
+  @apply my-6 border-slate-700;
+}
+.rules-doc table {
+  @apply my-4 w-full border-collapse text-sm;
+}
+.rules-doc th,
+.rules-doc td {
+  @apply border border-slate-700 px-3 py-1.5 text-left align-top;
+}
+.rules-doc th {
+  @apply bg-slate-800 font-semibold text-slate-100;
+}

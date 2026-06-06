@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- scaly tail lined with sharp steel spikes; base seam at left x=0, y34..66 -->
+  <!-- spikes (drawn first so bases tuck under the body) -->
+  <g fill="#6b7079" stroke="#241a14" stroke-width="1.8" stroke-linejoin="round">
+    <polygon points="46,30 54,32 49,12"/>
+    <polygon points="60,30 70,32 66,8"/>
+    <polygon points="70,34 80,40 90,16"/>
+    <polygon points="74,46 78,54 99,50"/>
+    <polygon points="70,60 80,58 88,82"/>
+    <polygon points="60,62 68,60 64,86"/>
+    <polygon points="54,60 60,56 50,80"/>
+  </g>
+  <!-- spike highlights -->
+  <g fill="#aeb3bb" stroke="none" opacity="0.8">
+    <polygon points="49,18 51,30 52,31"/>
+    <polygon points="65,14 67,30 68,31"/>
+    <polygon points="86,22 76,40 80,41"/>
+    <polygon points="94,50 76,49 76,51"/>
+    <polygon points="84,78 78,59 76,60"/>
+    <polygon points="62,82 65,62 67,61"/>
+  </g>
+  <!-- scaly body -->
+  <path d="M0 34
+           C12 34 24 34 34 36
+           C46 39 56 43 64 48
+           C70 50 72 50 72 50
+           C68 54 58 58 46 61
+           C34 64 14 66 0 66 Z"
+        fill="#5f574a" stroke="#241a14" stroke-width="2" stroke-linejoin="round"/>
+  <!-- under shade -->
+  <path d="M0 66 C16 66 34 64 46 61 C56 58 66 53 70 50 C66 56 56 60 46 62 C30 65 14 67 0 66 Z"
+        fill="#463f35" opacity="0.6" stroke="none"/>
+  <!-- hex scale texture -->
+  <g fill="none" stroke="#463f35" stroke-width="1.1" stroke-linejoin="round" opacity="0.75">
+    <polygon points="12,42 18,40 22,44 19,50 13,50 10,46"/>
+    <polygon points="26,44 33,42 37,47 34,53 27,53 23,48"/>
+    <polygon points="40,48 47,46 51,51 48,56 41,57 37,52"/>
+    <polygon points="14,52 20,51 24,55 21,60 15,60 11,56"/>
+    <polygon points="28,55 35,54 39,58 36,62 29,63 25,59"/>
+    <polygon points="50,49 57,49 60,53 56,57 50,57"/>
+  </g>
+  <!-- small back-scale bumps near base -->
+  <path d="M6 33 l4 -4 4 4 4 -4 4 4 4 -3 3 3" fill="none" stroke="#241a14" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- base rim -->
+  <path d="M0 34 C5 34 9 35 11 37 L11 63 C9 65 5 66 0 66" fill="none" stroke="#3a342b" stroke-width="1.8" opacity="0.8"/>
+</svg>

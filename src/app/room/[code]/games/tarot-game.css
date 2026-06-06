@@ -1,0 +1,658 @@
+/* Tarot-specific styles (imported by tarot-game.tsx). Class names are prefixed
+   `tarot-` so they stay isolated even though the file is loaded globally. */
+
+/* Twinkling starfield behind the tarot spread (pure CSS, tiled dots). */
+.tarot-starfield {
+  background-image:
+    radial-gradient(2px 2px at 24px 32px, rgba(255, 255, 255, 0.95), transparent),
+    radial-gradient(2.5px 2.5px at 96px 72px, rgba(244, 214, 255, 0.95), transparent),
+    radial-gradient(1.5px 1.5px at 142px 44px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(2px 2px at 56px 128px, rgba(214, 224, 255, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 120px 150px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(2.5px 2.5px at 168px 108px, rgba(255, 255, 255, 1), transparent),
+    radial-gradient(1.5px 1.5px at 12px 96px, rgba(244, 214, 255, 0.85), transparent);
+  background-size: 180px 180px;
+  background-repeat: repeat;
+  animation: tarotTwinkle 4.5s ease-in-out infinite;
+}
+
+@keyframes tarotTwinkle {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ── Drifting fog ───────────────────────────────────────────────────────────
+   Two layered bands of soft, self-blurred cloud that drift slowly in opposite
+   directions for a parallax mist. Pure CSS (no images) and the blur lives on the
+   fog layer itself, so it softens the room without blurring the cards or text. */
+.tarot-fog {
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+  opacity: 0.55;
+  background:
+    radial-gradient(40% 55% at 22% 30%, rgba(168, 85, 247, 0.12), transparent 60%),
+    radial-gradient(45% 55% at 72% 58%, rgba(99, 102, 241, 0.12), transparent 62%),
+    radial-gradient(35% 48% at 48% 82%, rgba(244, 214, 255, 0.09), transparent 60%);
+  filter: blur(30px);
+  animation: tarotFogDrift 26s ease-in-out infinite alternate;
+}
+
+.tarot-fog--slow {
+  inset: -30%;
+  opacity: 0.42;
+  background:
+    radial-gradient(50% 58% at 80% 24%, rgba(217, 70, 239, 0.11), transparent 62%),
+    radial-gradient(48% 55% at 28% 72%, rgba(79, 70, 229, 0.11), transparent 65%);
+  filter: blur(40px);
+  animation: tarotFogDrift 41s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes tarotFogDrift {
+  0% {
+    transform: translate3d(-4%, 1%, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(3%, -2%, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(5%, 1%, 0) scale(1.06);
+  }
+}
+
+/* Soft dark vignette: blurs/darkens the edges of the room to draw the eye in. */
+.tarot-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(115% 90% at 50% 42%, transparent 52%, rgba(2, 6, 23, 0.55) 100%);
+}
+
+/* ── Moving light ───────────────────────────────────────────────────────────
+   A warm candlelight that drifts across the table (as if the flame itself is
+   moving) and a faint diagonal shaft that periodically sweeps through the room.
+   Both use `screen` blending so they add light over the dark panel. */
+.tarot-roving-light {
+  position: absolute;
+  inset: -10% -20%;
+  pointer-events: none;
+  background: radial-gradient(
+    26% 36% at 50% 20%,
+    rgba(251, 191, 36, 0.2),
+    rgba(251, 146, 60, 0.06) 48%,
+    transparent 72%
+  );
+  mix-blend-mode: screen;
+  animation: tarotRovingLight 17s ease-in-out infinite alternate;
+}
+
+@keyframes tarotRovingLight {
+  0% {
+    transform: translate3d(-12%, 0, 0);
+    opacity: 0.85;
+  }
+  35% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(8%, 1.5%, 0);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(14%, -1%, 0);
+    opacity: 0.95;
+  }
+}
+
+.tarot-light-shaft {
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -30%;
+  width: 32%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(244, 214, 255, 0.07) 45%,
+    rgba(168, 85, 247, 0.05) 55%,
+    transparent
+  );
+  transform: skewX(-12deg);
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  animation: tarotLightShaft 23s ease-in-out infinite;
+}
+
+@keyframes tarotLightShaft {
+  0% {
+    transform: translateX(0) skewX(-12deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(430%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarot-fog,
+  .tarot-fog--slow,
+  .tarot-roving-light,
+  .tarot-light-shaft,
+  .tarot-card-cast {
+    animation: none;
+  }
+}
+
+/* ── Shuffle intro ──────────────────────────────────────────────────────────
+   A two-handed riffle: the stack splits left/right, the halves bow out and
+   zipper back together (staggered per card), with a periodic "square-up" tap
+   and a cut. Built from a single shared keyframe driven by per-card CSS vars
+   (`--dir` for which hand, negative `animation-delay` for the cascade). */
+.tarot-shuffle-stage {
+  position: relative;
+  display: flex;
+  height: 18rem;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+}
+
+/* The whole deck rocks + tilts slightly for depth and "hands at work" feel. */
+.tarot-shuffle-pile {
+  position: relative;
+  height: 16rem;
+  width: 11rem;
+  transform-style: preserve-3d;
+  animation: tarotPileSquareUp 1.9s ease-in-out infinite;
+}
+
+.tarot-shuffle-card {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  transform-origin: 50% 80%;
+  animation: tarotRiffle 0.95s ease-in-out infinite;
+}
+
+@keyframes tarotRiffle {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg);
+  }
+  26% {
+    transform: translateX(calc(var(--dir, 1) * 66px)) translateY(-10px)
+      rotate(calc(var(--dir, 1) * 11deg));
+  }
+  40% {
+    transform: translateX(calc(var(--dir, 1) * 70px)) translateY(-12px)
+      rotate(calc(var(--dir, 1) * 12deg));
+  }
+  72% {
+    transform: translateX(calc(var(--dir, 1) * 16px)) translateY(-2px)
+      rotate(calc(var(--dir, 1) * 3deg));
+  }
+}
+
+/* Periodic squaring-up tap + a half-deck cut twist. */
+@keyframes tarotPileSquareUp {
+  0%,
+  100% {
+    transform: rotateX(10deg) rotateZ(0deg) scale(1);
+  }
+  46% {
+    transform: rotateX(10deg) rotateZ(0deg) scale(1);
+  }
+  60% {
+    transform: rotateX(10deg) rotateZ(-4deg) scale(0.97);
+  }
+  74% {
+    transform: rotateX(10deg) rotateZ(3deg) scale(1.02);
+  }
+  88% {
+    transform: rotateX(10deg) rotateZ(0deg) scale(1);
+  }
+}
+
+/* Soft purple contact shadow on the reading table beneath the deck. */
+.tarot-table-shadow {
+  position: absolute;
+  bottom: 1.25rem;
+  height: 1.4rem;
+  width: 9rem;
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.4), transparent 70%);
+  filter: blur(5px);
+  animation: tarotShadowPulse 0.95s ease-in-out infinite;
+}
+
+@keyframes tarotShadowPulse {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+  35% {
+    transform: scaleX(1.35);
+    opacity: 0.3;
+  }
+}
+
+/* Tiny motes of light lifting off the deck while it shuffles. */
+.tarot-spark {
+  position: absolute;
+  bottom: 4.5rem;
+  left: 50%;
+  height: 4px;
+  width: 4px;
+  border-radius: 9999px;
+  background: rgba(244, 214, 255, 0.95);
+  box-shadow: 0 0 8px 1px rgba(217, 70, 239, 0.8);
+  opacity: 0;
+  animation: tarotSpark 1.8s ease-in-out infinite;
+}
+
+@keyframes tarotSpark {
+  0% {
+    transform: translate(calc(var(--x, 0) * 1px), 0) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(var(--x, 0) * 2.4px), -120px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* ── Deal ───────────────────────────────────────────────────────────────────
+   Cards fly off the centered deck, arc out to their slot, overshoot, and
+   settle with a small bounce. `--deal-x` / `--deal-rot` are set per card. */
+.tarot-deal {
+  animation: tarotDeal 0.85s cubic-bezier(0.18, 0.72, 0.22, 1.2) both;
+}
+
+@keyframes tarotDeal {
+  0% {
+    transform: translate(var(--deal-x, 0), -150px) rotate(var(--deal-rot, 0deg)) scale(0.72);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  68% {
+    transform: translate(0, 10px) rotate(calc(var(--deal-rot, 0deg) * -0.12)) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── 3D flip ─────────────────────────────────────────────────────────────────
+   A real card-in-3D-space flip. Two layers, each carrying only what it legally can:
+
+     .tarot-flip-scene — the camera (perspective). Never transformed, so the
+                         rotation below renders with true perspective foreshortening.
+     .tarot-flip-card  — the card: preserve-3d, holds the whole motion (lift, spin,
+                         scale). Its two faces are stacked back-to-back with their
+                         backfaces hidden, so only the side facing the camera paints.
+
+   The one hard rule: NO `filter` (or other grouping property) on the preserve-3d
+   card. A filter forces transform-style:flat, which collapses the 3D pairing and
+   lets the front glyph bleed through the back — the exact bug this replaces. The
+   contact shadow therefore lives on the separate, non-3D .tarot-flip-shadow blob.
+
+   Already-revealed cards rest statically at 180° via the --flipped class; a fresh
+   reveal plays tarotCardFlip, which ends on that same resting transform so dropping
+   the animation never snaps. */
+.tarot-flip-scene {
+  position: relative;
+  perspective: 1300px;
+  perspective-origin: 50% 42%;
+}
+
+.tarot-flip-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+
+.tarot-flip-card--flipped {
+  transform: rotateY(180deg);
+}
+
+.tarot-flip-card--flipping {
+  animation: tarotCardFlip 1.25s cubic-bezier(0.45, 0.05, 0.3, 1) both;
+}
+
+.tarot-flip-face {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.tarot-flip-face--front {
+  transform: rotateY(180deg);
+}
+
+/* Lift off the table, turn through the edge-on 90° at the peak of the arc while
+   drawing nearer the camera, then set back down face-up with a whisper of
+   overshoot so the card "settles" instead of stopping dead. */
+@keyframes tarotCardFlip {
+  0% {
+    transform: translateY(0) translateZ(0) rotateY(0deg) rotateX(0deg) rotateZ(0deg) scale(1);
+  }
+  50% {
+    transform: translateY(-26px) translateZ(110px) rotateY(90deg) rotateX(6deg) rotateZ(0deg)
+      scale(1.06);
+  }
+  82% {
+    transform: translateY(-7px) translateZ(26px) rotateY(184deg) rotateX(-3deg) rotateZ(1deg)
+      scale(1.02);
+  }
+  92% {
+    transform: translateY(-2px) translateZ(8px) rotateY(177.5deg) rotateX(0deg) rotateZ(0deg)
+      scale(1.004);
+  }
+  100% {
+    transform: translateY(0) translateZ(0) rotateY(180deg) rotateX(0deg) rotateZ(0deg) scale(1);
+  }
+}
+
+/* Contact shadow under the card. It sits on its own non-3D layer so it can use a
+   blur without disturbing the flip. It tightens and fades as the card climbs and
+   returns as the card lands — selling the lift off the reading table. */
+.tarot-flip-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 0.35rem;
+  height: 1rem;
+  width: 68%;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(2, 6, 23, 0.6), transparent 72%);
+  filter: blur(7px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tarot-flip-shadow--flipping {
+  animation: tarotFlipShadow 1.25s ease-in-out both;
+}
+
+@keyframes tarotFlipShadow {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translateX(-50%) scaleX(0.68) scaleY(0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarot-flip-card {
+    transition: none;
+  }
+  .tarot-flip-card--flipping,
+  .tarot-flip-shadow--flipping {
+    animation: none;
+  }
+}
+
+/* ── Card slot ──────────────────────────────────────────────────────────────
+   Gentle lift + glow on hover so a finished spread feels interactive. */
+.tarot-card-slot {
+  position: relative;
+  transition: transform 0.28s ease, filter 0.28s ease;
+}
+.tarot-card-slot:hover {
+  transform: translateY(-6px);
+  filter: drop-shadow(0 18px 26px rgba(217, 70, 239, 0.38));
+}
+
+/* Ambient ground shadow beneath each card. It sways side-to-side on the same
+   cadence as the roving candlelight, so the cards read as lit by a moving flame.
+   Sits behind the card faces (z-index 0); the card lifts off it during a flip. */
+.tarot-card-cast {
+  position: absolute;
+  left: 50%;
+  bottom: -0.45rem;
+  z-index: 0;
+  height: 0.9rem;
+  width: 72%;
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(2, 6, 23, 0.62), transparent 72%);
+  filter: blur(7px);
+  pointer-events: none;
+  animation: tarotCastSway 17s ease-in-out infinite alternate;
+}
+
+@keyframes tarotCastSway {
+  0% {
+    transform: translateX(-62%) scaleX(1.18) scaleY(0.88);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(-50%) scaleX(0.9) scaleY(1);
+    opacity: 0.72;
+  }
+  100% {
+    transform: translateX(-38%) scaleX(1.18) scaleY(0.88);
+    opacity: 0.5;
+  }
+}
+
+/* ── Reveal burst ───────────────────────────────────────────────────────────
+   A glow + expanding ring fire as a card lands face-up (delayed to coincide
+   with the back half of the 3D flip). */
+.tarot-reveal-burst {
+  position: absolute;
+  inset: -10%;
+  border-radius: 1rem;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(217, 70, 239, 0.55), transparent 62%);
+  opacity: 0;
+  animation: tarotRevealGlow 1100ms ease-out 720ms both;
+}
+
+@keyframes tarotRevealGlow {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  28% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+.tarot-reveal-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  border: 2px solid rgba(244, 214, 255, 0.75);
+  opacity: 0;
+  animation: tarotRevealRing 900ms ease-out 740ms both;
+}
+
+@keyframes tarotRevealRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+/* ── Chromatic aberration ───────────────────────────────────────────────────
+   Pure-CSS RGB fringing via offset red/cyan drop-shadows. drop-shadow tracks
+   the element's alpha silhouette, so it fringes the gradient-clipped title text
+   and the solid card edges without needing duplicated DOM. */
+
+/* Subtle, always-on split that breathes on the reading title. */
+.tarot-chromatic {
+  animation: tarotChromatic 4s ease-in-out infinite;
+}
+
+@keyframes tarotChromatic {
+  0%,
+  100% {
+    filter: drop-shadow(-0.6px 0 rgba(255, 40, 90, 0.55)) drop-shadow(0.6px 0 rgba(40, 200, 255, 0.55));
+  }
+  50% {
+    filter: drop-shadow(-1.6px 0 rgba(255, 40, 90, 0.6)) drop-shadow(1.6px 0 rgba(40, 200, 255, 0.6));
+  }
+}
+
+/* One-shot aberration that snaps shut as a card lands face-up (delayed to meet
+   the back half of the 3D flip, in step with the reveal burst/ring). */
+.tarot-chromatic-flash {
+  animation: tarotChromaticFlash 850ms cubic-bezier(0.2, 0.7, 0.2, 1) 700ms both;
+}
+
+@keyframes tarotChromaticFlash {
+  0% {
+    filter: drop-shadow(-8px 0 rgba(255, 40, 90, 0.7)) drop-shadow(8px 0 rgba(40, 200, 255, 0.7));
+  }
+  60% {
+    filter: drop-shadow(-2px 0 rgba(255, 40, 90, 0.5)) drop-shadow(2px 0 rgba(40, 200, 255, 0.5));
+  }
+  100% {
+    filter: drop-shadow(0 0 rgba(255, 40, 90, 0)) drop-shadow(0 0 rgba(40, 200, 255, 0));
+  }
+}
+
+/* ── Card face accents ──────────────────────────────────────────────────────*/
+/* Slow sheen drifting across the revealed card's face. */
+.tarot-front-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  overflow: hidden;
+}
+.tarot-front-sheen::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: -40%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  transform: skewX(-14deg);
+  animation: tarotFrontSheen 5.5s ease-in-out infinite;
+}
+
+@keyframes tarotFrontSheen {
+  0% {
+    transform: translateX(0) skewX(-14deg);
+  }
+  55%,
+  100% {
+    transform: translateX(420%) skewX(-14deg);
+  }
+}
+
+/* Breathing glow on the Major Arcana numeral medallion. */
+.tarot-numeral {
+  animation: tarotNumeralGlow 3.4s ease-in-out infinite;
+}
+
+@keyframes tarotNumeralGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 70, 239, 0);
+  }
+  50% {
+    box-shadow: 0 0 16px 1px rgba(217, 70, 239, 0.45);
+  }
+}
+
+/* ── Setup screen ornament ──────────────────────────────────────────────────
+   A slowly rotating, breathing arcane sigil above the question form. */
+.tarot-sigil {
+  position: relative;
+  height: 4rem;
+  width: 4rem;
+  animation: tarotSigilFloat 6s ease-in-out infinite;
+}
+.tarot-sigil span {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid rgba(217, 70, 239, 0.45);
+}
+.tarot-sigil span:nth-child(1) {
+  animation: tarotSigilSpin 14s linear infinite;
+}
+.tarot-sigil span:nth-child(2) {
+  inset: 0.55rem;
+  border-style: dashed;
+  border-color: rgba(165, 180, 252, 0.5);
+  animation: tarotSigilSpin 9s linear infinite reverse;
+}
+.tarot-sigil span:nth-child(3) {
+  inset: 1.35rem;
+  border-radius: 0;
+  transform: rotate(45deg);
+  border-color: rgba(244, 214, 255, 0.6);
+  animation: tarotSigilPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes tarotSigilFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes tarotSigilSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tarotSigilPulse {
+  0%,
+  100% {
+    transform: rotate(45deg) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: rotate(45deg) scale(0.82);
+    opacity: 1;
+  }
+}

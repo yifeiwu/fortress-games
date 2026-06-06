@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200" role="img" aria-label="Acchi Muite Hoi artwork">
+  <defs>
+    <linearGradient id="ap-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="ap-glow" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ap-arrow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="200" fill="url(#ap-bg)"/>
+  <rect width="400" height="200" fill="url(#ap-glow)"/>
+
+  <!-- faint directional chevrons -->
+  <g stroke="#38bdf8" stroke-opacity="0.18" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 40 l18 18 -18 18"/>
+    <path d="M330 40 l-18 18 18 18"/>
+    <path d="M70 160 l18 -18 -18 -18"/>
+    <path d="M330 160 l-18 -18 18 -18"/>
+  </g>
+
+  <!-- central face looking left -->
+  <g transform="translate(200 100)">
+    <circle r="58" fill="#0f1b2e" stroke="#38bdf8" stroke-opacity="0.55" stroke-width="3"/>
+    <circle r="58" fill="none" stroke="#7dd3fc" stroke-opacity="0.25" stroke-width="10"/>
+    <!-- eyes glancing left -->
+    <ellipse cx="-22" cy="-12" rx="13" ry="15" fill="#e2e8f0"/>
+    <ellipse cx="14" cy="-12" rx="13" ry="15" fill="#e2e8f0"/>
+    <circle cx="-28" cy="-11" r="6" fill="#0ea5e9"/>
+    <circle cx="8" cy="-11" r="6" fill="#0ea5e9"/>
+    <!-- surprised mouth -->
+    <ellipse cx="-4" cy="24" rx="11" ry="9" fill="#0ea5e9" fill-opacity="0.85"/>
+    <!-- brows -->
+    <path d="M-36 -34 l24 6" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/>
+    <path d="M0 -28 l24 -6" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- big pointing arrow -->
+  <g transform="translate(96 100)">
+    <path d="M-46 -16 h48 v-16 l36 32 -36 32 v-16 h-48 z"
+          fill="url(#ap-arrow)" stroke="#bae6fd" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+</svg>

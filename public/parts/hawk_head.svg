@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#1c140c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column -->
+    <path d="M74 30 H100 V70 H74 Z" fill="#6b4423" stroke="none"/>
+    <path d="M74 30 H100 M74 70 H100" fill="none"/>
+    <!-- feathered head / crown with jagged back feathers -->
+    <path d="M22 44 L30 32 L42 22 L52 24 L60 16 L66 24 L76 22 L82 32 L86 44 L84 56 L80 50 L72 58 L62 52 L54 60 L40 56 L28 54 Z" fill="#6b4423"/>
+    <!-- darker crown shading -->
+    <path d="M42 22 L52 24 L60 16 L66 24 L62 34 L48 34 Z" fill="#4a2e16" stroke="#1c140c" stroke-width="1.3"/>
+    <!-- white throat / neck feathers -->
+    <path d="M22 46 L36 50 L46 58 L52 72 L40 78 L30 70 L24 58 Z" fill="#f2efe6"/>
+    <!-- white cheek -->
+    <path d="M30 40 L48 44 L46 54 L34 54 L28 48 Z" fill="#f2efe6" stroke="#1c140c" stroke-width="1.4"/>
+    <!-- upper beak (hooked, pointing left) -->
+    <path d="M28 40 L10 44 L4 50 L8 56 L16 56 L20 50 L34 48 Z" fill="#e3b53f"/>
+    <!-- beak hook tip shading -->
+    <path d="M10 44 L4 50 L8 56 L13 52 L11 47 Z" fill="#caa02f" stroke="#1c140c" stroke-width="1.3"/>
+    <!-- lower beak -->
+    <path d="M20 50 L34 52 L40 58 L30 60 L20 56 Z" fill="#c9982a"/>
+    <!-- fierce eye -->
+    <ellipse cx="44" cy="38" rx="6.5" ry="5.5" fill="#e3a72f" stroke="#1c140c" stroke-width="1.6"/>
+    <circle cx="44" cy="38" r="2.6" fill="#1a1108" stroke="none"/>
+    <circle cx="42.5" cy="36.5" r="0.9" fill="#fff" stroke="none"/>
+    <!-- brow shadow over eye -->
+    <path d="M37 32 L52 34 L50 38 L40 37 Z" fill="#4a2e16" stroke="none"/>
+    <!-- nostril -->
+    <ellipse cx="24" cy="46" rx="1.4" ry="1" fill="#1c140c" stroke="none"/>
+    <!-- feather texture strokes -->
+    <g fill="none" stroke="#4a2e16" stroke-width="1.1" opacity="0.85">
+      <path d="M60 28 L72 32 M58 38 L72 42 M56 46 L70 50 M64 22 L74 26"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Fortress Games">
+  <defs>
+    <linearGradient id="fg-wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="fg-tower" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <!-- central tower -->
+  <path d="M38 30 h4 v-7 h6 v7 h4 v-7 h6 v7 h4 v50 h-24 Z" fill="url(#fg-tower)"/>
+  <!-- flag -->
+  <line x1="50" y1="23" x2="50" y2="8" stroke="#e2e8f0" stroke-width="2"/>
+  <path d="M50 9 L66 13 L50 18 Z" fill="#fb7185"/>
+  <!-- side walls -->
+  <path d="M14 46 h4 v-6 h6 v6 h4 v-6 h6 v6 h4 v34 h-24 Z" fill="url(#fg-wall)"/>
+  <path d="M62 46 h4 v-6 h6 v6 h4 v-6 h6 v6 h4 v34 h-24 Z" fill="url(#fg-wall)"/>
+  <!-- gate -->
+  <path d="M44 80 v-16 a6 6 0 0 1 12 0 v16 Z" fill="#082f49"/>
+  <line x1="50" y1="64" x2="50" y2="80" stroke="#0ea5e9" stroke-width="1.5"/>
+  <!-- ground -->
+  <rect x="10" y="80" width="80" height="6" rx="2" fill="#0e7490"/>
+</svg>

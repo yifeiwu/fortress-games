@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200" role="img" aria-label="FrankenBeasts artwork">
+  <defs>
+    <linearGradient id="fb-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08160f"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="fb-glow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fb-skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6ee7b7"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="200" fill="url(#fb-bg)"/>
+  <rect width="400" height="200" fill="url(#fb-glow)"/>
+
+  <!-- electric arcs -->
+  <g stroke="#a7f3d0" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8">
+    <path d="M60 50 l14 12 -10 10 16 14"/>
+    <path d="M340 46 l-14 12 10 10 -16 14"/>
+  </g>
+
+  <!-- monster head -->
+  <g transform="translate(200 108)">
+    <!-- neck bolts -->
+    <rect x="-86" y="6" width="20" height="14" rx="3" fill="#94a3b8"/>
+    <rect x="66" y="6" width="20" height="14" rx="3" fill="#94a3b8"/>
+    <!-- head -->
+    <rect x="-74" y="-58" width="148" height="118" rx="22" fill="url(#fb-skin)" stroke="#064e3b" stroke-width="3"/>
+    <!-- flat top / hair -->
+    <rect x="-74" y="-58" width="148" height="20" rx="10" fill="#065f46"/>
+    <!-- stitches -->
+    <g stroke="#064e3b" stroke-width="3" stroke-linecap="round">
+      <path d="M-30 -38 v60"/>
+      <path d="M-38 -30 h16 M-38 -16 h16 M-38 -2 h16 M-38 12 h16"/>
+    </g>
+    <!-- mismatched eyes -->
+    <circle cx="-26" cy="-8" r="16" fill="#0b1220"/>
+    <circle cx="-26" cy="-8" r="7" fill="#fbbf24"/>
+    <rect x="14" y="-22" width="34" height="28" rx="6" fill="#0b1220"/>
+    <circle cx="31" cy="-8" r="7" fill="#f87171"/>
+    <!-- brow scar -->
+    <path d="M8 -30 l40 -6" stroke="#064e3b" stroke-width="4" stroke-linecap="round"/>
+    <!-- jagged mouth with fangs -->
+    <path d="M-44 30 h88" stroke="#064e3b" stroke-width="4" stroke-linecap="round"/>
+    <g fill="#ecfdf5">
+      <path d="M-36 30 l8 14 8 -14 z"/>
+      <path d="M-4 30 l8 14 8 -14 z"/>
+      <path d="M28 30 l8 14 8 -14 z"/>
+    </g>
+  </g>
+</svg>

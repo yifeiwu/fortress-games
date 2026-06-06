@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#1f2e14" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column -->
+    <path d="M74 30 H100 V70 H74 Z" fill="#4f9e2f" stroke="none"/>
+    <path d="M74 30 H100 M74 70 H100" fill="none"/>
+    <!-- upper head -->
+    <path d="M12 42 L24 34 L40 30 L58 28 L76 34 L86 42 L84 50 L70 50 L48 50 L30 50 L16 48 Z" fill="#4f9e2f"/>
+    <!-- brow scale ridge -->
+    <path d="M40 30 L58 28 L70 33 L66 38 L46 38 Z" fill="#357a1e" stroke="#1f2e14" stroke-width="1.3"/>
+    <!-- lower jaw (yellow) -->
+    <path d="M16 48 L40 50 L62 52 L82 56 L80 64 L60 66 L40 62 L22 56 Z" fill="#f2d22e"/>
+    <!-- open mouth interior -->
+    <path d="M30 50 L62 52 L60 60 L38 60 Z" fill="#241006" stroke="#1f2e14" stroke-width="1.5"/>
+    <path d="M40 54 L56 55 L54 59 L42 58 Z" fill="#7a2228" stroke="none"/>
+    <!-- fangs with venom drips -->
+    <g fill="#eef3e6" stroke="#1f2e14" stroke-width="1">
+      <path d="M26 49 L24 64 L30 51 Z"/>
+      <path d="M34 50 L33 60 L38 51 Z"/>
+    </g>
+    <path d="M24 64 q-1 5 0 8" fill="none" stroke="#a7d44e" stroke-width="2"/>
+    <circle cx="24" cy="74" r="1.6" fill="#a7d44e" stroke="#1f2e14" stroke-width="0.7"/>
+    <!-- forked tongue -->
+    <path d="M38 58 C30 64 22 70 12 70 M22 68 L14 72 M22 68 L16 64" fill="none" stroke="#2a1a1a" stroke-width="1.6"/>
+    <!-- snout / yellow lip -->
+    <path d="M12 42 L24 34 L26 44 L16 48 Z" fill="#8fc94f" stroke="#1f2e14" stroke-width="1.3"/>
+    <!-- nostril -->
+    <ellipse cx="18" cy="40" rx="1.6" ry="2.2" fill="#1f2e14" stroke="none"/>
+    <!-- venomous slit eye -->
+    <ellipse cx="46" cy="40" rx="7" ry="5" fill="#f2d22e" stroke="#1f2e14" stroke-width="1.6"/>
+    <path d="M46 35.5 C49 39 49 41 46 44.5 C43 41 43 39 46 35.5 Z" fill="#1f2e14" stroke="none"/>
+    <!-- scale texture -->
+    <g fill="none" stroke="#357a1e" stroke-width="1" opacity="0.8">
+      <path d="M56 34 q4 3 0 6 M64 36 q4 3 0 6 M70 40 q4 3 0 6 M58 42 q4 3 0 6 M66 46 q4 3 0 6"/>
+    </g>
+    <!-- belly scale lines -->
+    <g fill="none" stroke="#caa81f" stroke-width="1" opacity="0.9">
+      <path d="M44 60 L46 64 M52 61 L54 65 M60 62 L62 66 M68 60 L70 64"/>
+    </g>
+  </g>
+</svg>

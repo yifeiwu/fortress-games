@@ -1,0 +1,218 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="volcSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0a0a"/>
+      <stop offset="55%" stop-color="#4a1410"/>
+      <stop offset="100%" stop-color="#7a2410"/>
+    </linearGradient>
+    <linearGradient id="volcGround" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a1714"/>
+      <stop offset="100%" stop-color="#140a08"/>
+    </linearGradient>
+    <radialGradient id="volcGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff8a2a"/>
+      <stop offset="100%" stop-color="#ff8a2a" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .ember { animation: vEmber 5s ease-in infinite; }
+      .ember:nth-of-type(2n) { animation-duration: 6.5s; animation-delay: -1.5s; }
+      .ember:nth-of-type(3n) { animation-duration: 7.8s; animation-delay: -3.4s; }
+      .ember:nth-of-type(4n) { animation-duration: 4.4s; animation-delay: -2.2s; }
+      .craterGlow { animation: vGlow 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+      .craterCore { animation: vCore 3.6s ease-in-out infinite; }
+      .lava { animation: vLava 2.8s ease-in-out infinite; }
+      .lava2 { animation-delay: -1.4s; }
+      .crack { animation: vCrack 3.2s ease-in-out infinite; }
+      .crack2 { animation-duration: 4.1s; animation-delay: -1.6s; }
+      .crack3 { animation-duration: 2.6s; animation-delay: -0.8s; }
+      .pool { animation: vLava 2.4s ease-in-out infinite; }
+      .pool2 { animation: vLava 3.2s ease-in-out infinite; animation-delay: -1s; }
+      .pool3 { animation: vLava 2.9s ease-in-out infinite; animation-delay: -1.8s; }
+      .pool4 { animation: vLava 3.6s ease-in-out infinite; animation-delay: -2.4s; }
+      .flowL { animation: vFlowL 9s ease-in infinite; }
+      .flowL2 { animation-duration: 12s; animation-delay: -4s; }
+      .flowL3 { animation-duration: 14.5s; animation-delay: -9s; }
+      .flowR { animation: vFlowR 9.5s ease-in infinite; }
+      .flowR2 { animation-duration: 12.5s; animation-delay: -5s; }
+      .flowR3 { animation-duration: 15s; animation-delay: -10s; }
+      .craterPuff { animation: vPuff 6s ease-out infinite; }
+      .spurtU { animation: vSpurtU 3.6s ease-out infinite; }
+      .spurtU2 { animation: vSpurtU 4.6s ease-out infinite; animation-delay: -2.4s; }
+      .spurtL { animation: vSpurtL 4.1s ease-out infinite; animation-delay: -1.2s; }
+      .spurtL2 { animation: vSpurtL 5.3s ease-out infinite; animation-delay: -3.4s; }
+      .spurtR { animation: vSpurtR 3.9s ease-out infinite; animation-delay: -0.7s; }
+      .spurtR2 { animation: vSpurtR 5.6s ease-out infinite; animation-delay: -2.9s; }
+      @keyframes vEmber {
+        0% { transform: translate(0,0); opacity: 0; }
+        12% { opacity: 1; }
+        80% { opacity: .9; }
+        100% { transform: translate(-14px,-120px); opacity: 0; }
+      }
+      @keyframes vGlow { 0%,100% { opacity: .45; transform: scale(1); } 50% { opacity: .8; transform: scale(1.12); } }
+      @keyframes vCore { 0%,100% { opacity: .85; } 50% { opacity: 1; } }
+      @keyframes vLava { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+      @keyframes vCrack { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+      /* Ash spills out of the crater, rolls down the left slope, then billows
+         toward the camera (down + grow + fade). */
+      @keyframes vFlowL {
+        0% { transform: translate(0,0) scale(.35); opacity: 0; }
+        12% { opacity: .55; }
+        55% { transform: translate(-92px,126px) scale(.9); opacity: .5; }
+        100% { transform: translate(-150px,252px) scale(2.2); opacity: 0; }
+      }
+      /* Same, mirrored down the right slope. */
+      @keyframes vFlowR {
+        0% { transform: translate(0,0) scale(.35); opacity: 0; }
+        12% { opacity: .55; }
+        55% { transform: translate(96px,128px) scale(.9); opacity: .5; }
+        100% { transform: translate(156px,254px) scale(2.2); opacity: 0; }
+      }
+      /* A small lazy puff lifting off the crater before it tips over the rim. */
+      @keyframes vPuff {
+        0% { transform: translateY(0) scale(.4); opacity: 0; }
+        30% { opacity: .45; }
+        100% { transform: translateY(-22px) scale(1.1); opacity: 0; }
+      }
+      /* Lava droplets launched from the crater, arcing up then falling back. The
+         flat tail (after ~56%) gives a pause so eruptions read as periodic. */
+      @keyframes vSpurtU {
+        0% { transform: translate(0,0) scale(.4); opacity: 0; }
+        4% { opacity: 1; }
+        22% { transform: translate(6px,-150px) scale(1.05); opacity: 1; }
+        40% { transform: translate(12px,-70px) scale(.9); opacity: 1; }
+        56%,100% { transform: translate(18px,34px) scale(.45); opacity: 0; }
+      }
+      @keyframes vSpurtL {
+        0% { transform: translate(0,0) scale(.4); opacity: 0; }
+        4% { opacity: 1; }
+        24% { transform: translate(-70px,-122px) scale(1); opacity: 1; }
+        42% { transform: translate(-110px,-40px) scale(.85); opacity: 1; }
+        56%,100% { transform: translate(-142px,52px) scale(.45); opacity: 0; }
+      }
+      @keyframes vSpurtR {
+        0% { transform: translate(0,0) scale(.4); opacity: 0; }
+        4% { opacity: 1; }
+        24% { transform: translate(72px,-126px) scale(1); opacity: 1; }
+        42% { transform: translate(112px,-42px) scale(.85); opacity: 1; }
+        56%,100% { transform: translate(146px,54px) scale(.45); opacity: 0; }
+      }
+    </style>
+  </defs>
+
+  <!-- sky -->
+  <rect width="800" height="400" fill="url(#volcSky)"/>
+
+  <!-- ember sparks (rise & fade) -->
+  <g fill="#ffb05a">
+    <circle class="ember" cx="120" cy="300" r="2"/><circle class="ember" cx="200" cy="320" r="1.4"/>
+    <circle class="ember" cx="330" cy="300" r="1.8"/><circle class="ember" cx="470" cy="320" r="1.3"/>
+    <circle class="ember" cx="560" cy="300" r="2"/><circle class="ember" cx="690" cy="320" r="1.5"/>
+    <circle class="ember" cx="640" cy="300" r="1.4"/><circle class="ember" cx="80" cy="320" r="1.4"/>
+    <circle class="ember" cx="405" cy="150" r="1.8"/><circle class="ember" cx="380" cy="160" r="1.3"/>
+  </g>
+
+  <!-- distant ridges -->
+  <path d="M0 270 Q160 230 300 260 T560 250 T800 270 V330 H0 Z" fill="#2a1310" opacity="0.9"/>
+
+  <!-- main volcano -->
+  <path d="M250 300 L390 110 L420 110 L560 300 Z" fill="#1c0e0b"/>
+  <!-- crater glow -->
+  <circle class="craterGlow" cx="405" cy="112" r="70" fill="url(#volcGlow)"/>
+  <ellipse class="craterCore" cx="405" cy="112" rx="26" ry="9" fill="#ff8a2a"/>
+  <!-- lava streams down the cone -->
+  <g fill="#ff7322">
+    <path class="lava" d="M398 118 q-8 60 -26 120 q-4 30 -18 62 l10 0 q12 -34 16 -64 q16 -60 24 -118 Z"/>
+    <path class="lava lava2" d="M414 118 q10 70 28 130 q6 28 18 52 l-10 0 q-12 -26 -16 -54 q-18 -64 -26 -126 Z"/>
+  </g>
+
+  <!-- periodic lava droplets flung from the crater -->
+  <g fill="#ff9a2e">
+    <g transform="translate(405 114)"><circle class="spurtU" cx="0" cy="0" r="4.5"/></g>
+    <g transform="translate(405 114)"><circle class="spurtU2" cx="0" cy="0" r="3.2"/></g>
+    <g transform="translate(399 116)"><circle class="spurtL" cx="0" cy="0" r="4"/></g>
+    <g transform="translate(399 116)"><circle class="spurtL2" cx="0" cy="0" r="2.8"/></g>
+    <g transform="translate(412 116)"><circle class="spurtR" cx="0" cy="0" r="4"/></g>
+    <g transform="translate(412 116)"><circle class="spurtR2" cx="0" cy="0" r="2.8"/></g>
+  </g>
+  <!-- small puffs lifting off the crater rim -->
+  <g fill="#34201a">
+    <g transform="translate(398 110)"><g class="craterPuff"><g transform="scale(2)"><circle cx="0" cy="0" r="12"/><circle cx="12" cy="-6" r="9"/><circle cx="-10" cy="-4" r="8"/></g></g></g>
+    <g transform="translate(414 110)"><g class="craterPuff" style="animation-delay:-3s"><g transform="scale(2)"><circle cx="0" cy="0" r="11"/><circle cx="10" cy="-6" r="8"/><circle cx="-8" cy="-3" r="7"/></g></g></g>
+  </g>
+
+  <!-- foreground rock spires (framing) -->
+  <g fill="#160b08">
+    <path d="M-10 300 L40 180 L90 300 Z"/>
+    <path d="M760 300 L800 200 L840 300 Z"/>
+  </g>
+
+  <!-- ground band -->
+  <rect y="300" width="800" height="100" fill="url(#volcGround)"/>
+  <!-- pulsing lava pools & flows collecting at the base of the cone -->
+  <g>
+    <!-- soft heat glow over the pooling lava -->
+    <ellipse class="pool" cx="360" cy="300" rx="120" ry="46" fill="url(#volcGlow)" opacity="0.55"/>
+    <ellipse class="pool3" cx="470" cy="306" rx="110" ry="42" fill="url(#volcGlow)" opacity="0.5"/>
+    <!-- molten pools -->
+    <ellipse class="pool" cx="345" cy="302" rx="62" ry="13" fill="#ff5a1a"/>
+    <ellipse class="pool2" cx="440" cy="306" rx="74" ry="15" fill="#ff6a22"/>
+    <ellipse class="pool4" cx="530" cy="300" rx="48" ry="11" fill="#ff5a1a"/>
+    <!-- bright molten cores -->
+    <ellipse class="pool2" cx="345" cy="301" rx="40" ry="7" fill="#ffb24a"/>
+    <ellipse class="pool3" cx="440" cy="305" rx="48" ry="8" fill="#ffc25a"/>
+    <ellipse class="pool" cx="530" cy="299" rx="28" ry="5" fill="#ffb24a"/>
+  </g>
+  <!-- lava spilling from the base toward the camera -->
+  <g stroke-linecap="round" fill="none">
+    <path class="pool" d="M330 306 q-10 22 -26 38 q-6 14 -8 30" stroke="#ff6a22" stroke-width="9"/>
+    <path class="pool3" d="M452 308 q8 22 22 40 q6 12 8 28" stroke="#ff6a22" stroke-width="10"/>
+    <path class="pool2" d="M330 306 q-10 22 -26 38 q-6 14 -8 30" stroke="#ffc25a" stroke-width="4"/>
+    <path class="pool4" d="M452 308 q8 22 22 40 q6 12 8 28" stroke="#ffc25a" stroke-width="4"/>
+  </g>
+  <!-- lava cracks glowing in the ground -->
+  <g stroke="#ff6a1f" stroke-width="3" stroke-linecap="round" fill="none">
+    <path class="crack" d="M60 340 q30 10 60 6 q26 -4 52 8"/>
+    <path class="crack crack2" d="M520 372 q34 8 70 2 q30 -4 60 10"/>
+    <path class="crack crack3" d="M300 388 q24 6 50 2"/>
+  </g>
+  <!-- rocks -->
+  <g fill="#1d100c">
+    <ellipse cx="210" cy="384" rx="28" ry="9"/>
+    <ellipse cx="610" cy="392" rx="36" ry="11"/>
+  </g>
+
+  <!-- impact craters with smouldering molten centres -->
+  <g>
+    <g transform="translate(115 358)">
+      <ellipse cx="0" cy="1" rx="26" ry="9" fill="#3a1d14" opacity="0.7"/>
+      <ellipse cx="0" cy="0" rx="20" ry="7" fill="#0e0605"/>
+      <ellipse class="pool3" cx="1" cy="0" rx="10" ry="3" fill="#ff6a22" opacity="0.7"/>
+      <ellipse class="pool" cx="1" cy="0" rx="5" ry="1.6" fill="#ffb24a"/>
+      <ellipse cx="-28" cy="2" rx="3" ry="1.6" fill="#241310"/>
+      <ellipse cx="26" cy="-3" rx="2.4" ry="1.3" fill="#241310"/>
+    </g>
+    <g transform="translate(690 372)">
+      <ellipse cx="0" cy="1" rx="22" ry="7" fill="#3a1d14" opacity="0.65"/>
+      <ellipse cx="0" cy="0" rx="16" ry="5.5" fill="#0e0605"/>
+      <ellipse class="pool2" cx="1" cy="0" rx="8" ry="2.4" fill="#ff6a22" opacity="0.7"/>
+      <ellipse class="pool4" cx="1" cy="0" rx="4" ry="1.3" fill="#ffb24a"/>
+    </g>
+    <g transform="translate(405 388)">
+      <ellipse cx="0" cy="0" rx="14" ry="4.5" fill="#0e0605"/>
+      <ellipse class="pool3" cx="0" cy="0" rx="6" ry="1.8" fill="#ff6a22" opacity="0.6"/>
+    </g>
+  </g>
+
+  <!-- ash flowing DOWN the slopes and billowing toward the camera. Drawn last so
+       it passes in front of the cone AND the ground as it nears the viewer. -->
+  <g fill="#2c1a12">
+    <g transform="translate(392 122)"><g class="flowL"><g transform="scale(2)"><circle cx="0" cy="0" r="16"/><circle cx="-12" cy="6" r="13"/><circle cx="10" cy="-6" r="12"/><circle cx="-2" cy="14" r="11"/></g></g></g>
+    <g transform="translate(388 128)"><g class="flowL flowL2"><g transform="scale(2)"><circle cx="0" cy="0" r="18"/><circle cx="-14" cy="8" r="14"/><circle cx="12" cy="-4" r="12"/></g></g></g>
+    <g transform="translate(396 120)"><g class="flowL flowL3"><g transform="scale(2)"><circle cx="0" cy="0" r="15"/><circle cx="-12" cy="10" r="12"/><circle cx="8" cy="-8" r="11"/><circle cx="-4" cy="16" r="10"/></g></g></g>
+  </g>
+  <g fill="#321e14">
+    <g transform="translate(418 122)"><g class="flowR"><g transform="scale(2)"><circle cx="0" cy="0" r="16"/><circle cx="12" cy="6" r="13"/><circle cx="-10" cy="-6" r="12"/><circle cx="2" cy="14" r="11"/></g></g></g>
+    <g transform="translate(422 128)"><g class="flowR flowR2"><g transform="scale(2)"><circle cx="0" cy="0" r="18"/><circle cx="14" cy="8" r="14"/><circle cx="-12" cy="-4" r="12"/></g></g></g>
+    <g transform="translate(414 120)"><g class="flowR flowR3"><g transform="scale(2)"><circle cx="0" cy="0" r="15"/><circle cx="12" cy="10" r="12"/><circle cx="-8" cy="-8" r="11"/><circle cx="4" cy="16" r="10"/></g></g></g>
+  </g>
+</svg>

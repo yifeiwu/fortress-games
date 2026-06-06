@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#241a14" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column -->
+    <path d="M74 30 H100 V70 H74 Z" fill="#6e421f" stroke="none"/>
+    <path d="M74 30 H100 M74 70 H100" fill="none"/>
+    <!-- furry head silhouette with jagged fur back -->
+    <path d="M12 46 L20 34 L30 30 L40 22 L52 24 L60 18 L70 26 L80 28 L86 40 L84 56 L78 66 L66 72 L52 70 L40 68 Z" fill="#7a4a26"/>
+    <!-- ear -->
+    <path d="M58 20 a6 6 0 1 1 0.1 0 Z" fill="#7a4a26"/>
+    <path d="M58 22 a3 3 0 1 1 0.1 0 Z" fill="#5a3318" stroke="none"/>
+    <!-- muzzle / snout (lighter) -->
+    <path d="M12 46 L22 40 L40 42 L46 50 L42 60 L26 62 L14 56 Z" fill="#a06a3a"/>
+    <!-- lower jaw -->
+    <path d="M26 60 L46 56 L56 60 L54 72 L40 76 L30 70 Z" fill="#8a5a30"/>
+    <!-- open mouth -->
+    <path d="M28 56 L48 54 L52 60 L46 68 L32 66 Z" fill="#7a2230" stroke="#241a14" stroke-width="1.5"/>
+    <path d="M34 60 L46 60 L44 66 L36 65 Z" fill="#b03546" stroke="none"/>
+    <!-- fangs -->
+    <g fill="#f3ead2" stroke="#241a14" stroke-width="1.1">
+      <path d="M28 55 L30 64 L33 56 Z"/>
+      <path d="M44 55 L47 64 L49 56 Z"/>
+      <path d="M32 66 L34 60 L37 66 Z"/>
+      <path d="M42 67 L44 61 L47 67 Z"/>
+    </g>
+    <!-- nose -->
+    <path d="M10 44 Q8 50 14 52 Q22 54 22 46 Q20 41 14 42 Z" fill="#2b211a"/>
+    <circle cx="12" cy="47" r="1.3" fill="#5a4a3a" stroke="none"/>
+    <!-- angry brow + eye -->
+    <path d="M40 36 L56 32 L58 38 L44 42 Z" fill="#5a3318" stroke="#241a14" stroke-width="1.4"/>
+    <ellipse cx="50" cy="40" rx="4.5" ry="3.2" fill="#f2c14e" stroke="#241a14" stroke-width="1.3"/>
+    <ellipse cx="50" cy="40" rx="1.8" ry="2.6" fill="#241a14" stroke="none"/>
+    <!-- fur shading strokes on cheek -->
+    <g stroke="#5a3318" stroke-width="1.2" fill="none" opacity="0.8">
+      <path d="M60 40 L70 44 M62 50 L72 54 M58 60 L68 64 M64 30 L72 34"/>
+    </g>
+    <!-- snout dots -->
+    <g fill="#5a3318" stroke="none"><circle cx="26" cy="48" r="0.8"/><circle cx="30" cy="50" r="0.8"/><circle cx="28" cy="52" r="0.8"/></g>
+  </g>
+</svg>

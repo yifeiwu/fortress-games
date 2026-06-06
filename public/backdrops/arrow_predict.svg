@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="ap-arrow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#0ea5e9" stop-opacity="0.05"/>
+    </linearGradient>
+    <g id="ap-chevron">
+      <path d="M0 0 L60 70 L0 50 L-60 70 Z" fill="url(#ap-arrow)"/>
+    </g>
+  </defs>
+  <g opacity="0.5">
+    <use href="#ap-chevron" transform="translate(150 120) scale(1.4)"/>
+    <use href="#ap-chevron" transform="translate(1040 180) rotate(180) scale(1.1)"/>
+    <use href="#ap-chevron" transform="translate(220 660) rotate(90) scale(1.2)"/>
+    <use href="#ap-chevron" transform="translate(1000 640) rotate(-90) scale(1.3)"/>
+    <use href="#ap-chevron" transform="translate(600 60) scale(0.8)"/>
+  </g>
+  <g opacity="0.12" stroke="#38bdf8" stroke-width="2" fill="none">
+    <circle cx="600" cy="400" r="260"/>
+    <circle cx="600" cy="400" r="180"/>
+  </g>
+</svg>

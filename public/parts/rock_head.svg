@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#2b1a0e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column -->
+    <path d="M74 30 H100 V70 H74 Z" fill="#a3622a" stroke="none"/>
+    <path d="M74 30 H100 M74 70 H100" fill="none"/>
+    <!-- rocky skull / upper jaw -->
+    <path d="M10 40 L20 30 L40 22 L60 24 L80 32 L86 46 L80 56 L60 54 L44 50 L26 50 L14 47 Z" fill="#b5702f"/>
+    <!-- lower jaw -->
+    <path d="M26 54 L52 56 L74 58 L78 70 L60 74 L40 72 L30 64 Z" fill="#9c5a25"/>
+    <!-- open maw -->
+    <path d="M28 50 L62 54 L66 58 L46 64 L30 60 Z" fill="#3a1f10" stroke="none"/>
+    <!-- upper jagged teeth -->
+    <g fill="#d9a85f" stroke="#2b1a0e" stroke-width="1.2">
+      <path d="M30 50 L33 57 L36 50 Z"/>
+      <path d="M38 50 L41 58 L44 51 Z"/>
+      <path d="M46 51 L49 58 L52 52 Z"/>
+      <path d="M54 52 L57 58 L60 53 Z"/>
+    </g>
+    <!-- lower jagged teeth -->
+    <g fill="#d9a85f" stroke="#2b1a0e" stroke-width="1.2">
+      <path d="M34 64 L37 58 L40 64 Z"/>
+      <path d="M42 65 L45 59 L48 65 Z"/>
+      <path d="M50 64 L53 58 L56 64 Z"/>
+    </g>
+    <!-- rocky facet shading -->
+    <path d="M60 24 L80 32 L86 46 L80 56 L72 50 L68 34 Z" fill="#8a4f22" stroke="#2b1a0e" stroke-width="1.3"/>
+    <path d="M20 30 L40 22 L42 34 L24 40 Z" fill="#d59a4f" stroke="#2b1a0e" stroke-width="1.3"/>
+    <!-- rock fracture lines -->
+    <g stroke="#7a4520" stroke-width="1" fill="none" opacity="0.8">
+      <path d="M30 36 L48 34 L66 36 M40 24 L42 48 M58 26 L60 50 M20 40 L80 44"/>
+    </g>
+    <!-- glowing red eye -->
+    <ellipse cx="58" cy="38" rx="7" ry="5" fill="#3a1f10" stroke="#2b1a0e" stroke-width="1.4"/>
+    <ellipse cx="58" cy="38" rx="4" ry="3" fill="#ff3b1f" stroke="none"/>
+    <circle cx="56.5" cy="37" r="1.2" fill="#ffd0b0" stroke="none"/>
+    <!-- nostril -->
+    <ellipse cx="22" cy="35" rx="2" ry="3" fill="#2b1a0e" stroke="none"/>
+  </g>
+</svg>

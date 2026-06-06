@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- curling segmented scorpion tail with stinger + drip; base seam left x=0, y34..66 -->
+  <!-- solid seam block so fill reaches x=0 across y34..66 -->
+  <rect x="0" y="34" width="16" height="32" fill="#9aa520"/>
+  <!-- segments from base (left) curling up and over to the stinger (right) -->
+  <g fill="#9aa520" stroke="#1e2207" stroke-width="2" stroke-linejoin="round">
+    <ellipse cx="10" cy="50" rx="12" ry="16"/>
+    <ellipse cx="26" cy="36" rx="11" ry="13" transform="rotate(-38 26 36)"/>
+    <ellipse cx="44" cy="25" rx="12" ry="12" transform="rotate(-8 44 25)"/>
+    <ellipse cx="63" cy="24" rx="12" ry="12" transform="rotate(22 63 24)"/>
+    <ellipse cx="78" cy="38" rx="10" ry="11" transform="rotate(52 78 38)"/>
+    <ellipse cx="85" cy="52" rx="8" ry="9" transform="rotate(70 85 52)"/>
+  </g>
+  <!-- stinger -->
+  <path d="M85 52 C92 56 92 66 86 70 C82 73 79 71 80 67 C81 63 84 60 84 55 C84 53 84 52 85 52 Z"
+        fill="#9aa520" stroke="#1e2207" stroke-width="2" stroke-linejoin="round"/>
+  <!-- joint shading bands -->
+  <g fill="none" stroke="#1e2207" stroke-width="1.6" opacity="0.55">
+    <path d="M18 40 C20 46 20 54 18 60"/>
+    <path d="M34 30 C37 35 37 41 35 45"/>
+    <path d="M53 22 C56 25 56 30 55 33"/>
+    <path d="M71 28 C74 31 74 37 72 41"/>
+    <path d="M82 46 C85 49 85 53 84 56"/>
+  </g>
+  <!-- highlights -->
+  <g fill="#c2cd45" opacity="0.7" stroke="none">
+    <ellipse cx="8" cy="42" rx="5" ry="7"/>
+    <ellipse cx="24" cy="30" rx="4" ry="6" transform="rotate(-38 24 30)"/>
+    <ellipse cx="42" cy="20" rx="6" ry="4"/>
+    <ellipse cx="62" cy="19" rx="6" ry="4" transform="rotate(22 62 19)"/>
+    <ellipse cx="76" cy="34" rx="4" ry="5" transform="rotate(52 76 34)"/>
+  </g>
+  <!-- under shade -->
+  <g fill="#76801a" opacity="0.5" stroke="none">
+    <ellipse cx="13" cy="60" rx="6" ry="6"/>
+    <ellipse cx="48" cy="30" rx="7" ry="4"/>
+    <ellipse cx="88" cy="56" rx="4" ry="5"/>
+  </g>
+  <!-- speckles -->
+  <g fill="#5e660f" opacity="0.6" stroke="none">
+    <circle cx="14" cy="48" r="1"/>
+    <circle cx="30" cy="34" r="1"/>
+    <circle cx="46" cy="24" r="1"/>
+    <circle cx="64" cy="22" r="1"/>
+    <circle cx="80" cy="40" r="1"/>
+  </g>
+  <!-- venom drip -->
+  <path d="M85 70 C88 73 88 78 85 80 C82 78 82 73 85 70 Z" fill="#c8d33a" stroke="#1e2207" stroke-width="1.4" stroke-linejoin="round"/>
+  <circle cx="85" cy="88" r="3" fill="#c8d33a" stroke="#1e2207" stroke-width="1.4"/>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="fb-arch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34d399" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#0f766e" stop-opacity="0.04"/>
+    </linearGradient>
+    <g id="fb-window">
+      <path d="M0 320 L0 80 Q60 -10 120 80 L120 320 Z" fill="url(#fb-arch)" stroke="#34d399" stroke-opacity="0.3" stroke-width="2"/>
+      <path d="M60 30 L60 320 M0 150 L120 150" stroke="#34d399" stroke-opacity="0.25" stroke-width="2"/>
+    </g>
+  </defs>
+  <use href="#fb-window" transform="translate(60 120)"/>
+  <use href="#fb-window" transform="translate(220 180) scale(0.85)"/>
+  <use href="#fb-window" transform="translate(1020 120)"/>
+  <use href="#fb-window" transform="translate(900 180) scale(0.85)"/>
+  <!-- lightning bolt -->
+  <path d="M620 60 L560 360 L640 340 L580 700 L740 320 L650 340 L720 60 Z"
+        fill="#a7f3d0" opacity="0.12"/>
+  <g opacity="0.1" stroke="#34d399" stroke-width="2" fill="none">
+    <circle cx="600" cy="420" r="300"/>
+  </g>
+</svg>

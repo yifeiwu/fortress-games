@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="forestSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b2238"/>
+      <stop offset="55%" stop-color="#143b3a"/>
+      <stop offset="100%" stop-color="#1d4d33"/>
+    </linearGradient>
+    <linearGradient id="forestGround" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#244b27"/>
+      <stop offset="100%" stop-color="#15301a"/>
+    </linearGradient>
+    <radialGradient id="forestMoon" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#dff5e8"/>
+      <stop offset="100%" stop-color="#dff5e8" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .twinkle { animation: fTwinkle 3.5s ease-in-out infinite; }
+      .twinkle:nth-of-type(2n) { animation-duration: 4.6s; animation-delay: -1.2s; }
+      .twinkle:nth-of-type(3n) { animation-duration: 5.4s; animation-delay: -2.6s; }
+      .moonGlow { animation: fMoon 7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+      .sway { transform-box: fill-box; transform-origin: bottom center; animation: fSway 6s ease-in-out infinite; }
+      .sway2 { animation-duration: 7.5s; animation-delay: -2s; }
+      .grass { transform-box: fill-box; transform-origin: bottom center; animation: fSway 4.5s ease-in-out infinite; }
+      .firefly { animation: fFly 9s ease-in-out infinite; }
+      .firefly2 { animation-duration: 11s; animation-delay: -3s; }
+      .firefly3 { animation-duration: 13s; animation-delay: -6s; }
+      .cloud { animation: fCloud 64s linear infinite; }
+      .cloud2 { animation-duration: 92s; animation-delay: -34s; }
+      .cloud3 { animation-duration: 110s; animation-delay: -70s; }
+      .leaf { animation: fLeaf 7s linear infinite; }
+      .leaf2 { animation-duration: 9.5s; animation-delay: -3s; }
+      .leaf3 { animation-duration: 11s; animation-delay: -6s; }
+      .leaf4 { animation-duration: 8.4s; animation-delay: -4.5s; }
+      @keyframes fTwinkle { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+      @keyframes fMoon { 0%,100% { opacity: .4; transform: scale(1); } 50% { opacity: .65; transform: scale(1.06); } }
+      @keyframes fSway { 0%,100% { transform: rotate(-2.4deg); } 50% { transform: rotate(2.4deg); } }
+      @keyframes fFly {
+        0% { transform: translate(0,0); opacity: 0; }
+        15% { opacity: 1; }
+        50% { transform: translate(30px,-22px); opacity: 1; }
+        85% { opacity: 1; }
+        100% { transform: translate(60px,6px); opacity: 0; }
+      }
+      @keyframes fCloud { 0% { transform: translateX(-240px); } 100% { transform: translateX(1040px); } }
+      @keyframes fLeaf {
+        0% { transform: translate(-40px,0) rotate(0deg); opacity: 0; }
+        10% { opacity: .95; }
+        90% { opacity: .95; }
+        100% { transform: translate(900px,46px) rotate(560deg); opacity: 0; }
+      }
+    </style>
+  </defs>
+
+  <!-- sky -->
+  <rect width="800" height="400" fill="url(#forestSky)"/>
+
+  <!-- moon glow -->
+  <circle class="moonGlow" cx="640" cy="90" r="90" fill="url(#forestMoon)"/>
+  <circle cx="640" cy="90" r="34" fill="#eafaf0" opacity="0.9"/>
+
+  <!-- stars -->
+  <g fill="#cfeede">
+    <circle class="twinkle" cx="120" cy="60" r="1.6"/><circle class="twinkle" cx="200" cy="110" r="1.2"/>
+    <circle class="twinkle" cx="320" cy="50" r="1.4"/><circle class="twinkle" cx="450" cy="90" r="1.2"/>
+    <circle class="twinkle" cx="520" cy="40" r="1.6"/><circle class="twinkle" cx="710" cy="160" r="1.2"/>
+    <circle class="twinkle" cx="70" cy="140" r="1.2"/><circle class="twinkle" cx="400" cy="140" r="1.1"/>
+  </g>
+
+  <!-- drifting clouds -->
+  <g fill="#bcdccb">
+    <g class="cloud" opacity="0.15">
+      <ellipse cx="0" cy="80" rx="46" ry="17"/><ellipse cx="38" cy="72" rx="38" ry="19"/>
+      <ellipse cx="-36" cy="84" rx="34" ry="15"/><ellipse cx="16" cy="88" rx="52" ry="15"/>
+    </g>
+    <g class="cloud cloud2" opacity="0.12">
+      <ellipse cx="0" cy="130" rx="54" ry="18"/><ellipse cx="44" cy="122" rx="40" ry="20"/>
+      <ellipse cx="-40" cy="134" rx="36" ry="16"/>
+    </g>
+    <g class="cloud cloud3" opacity="0.1">
+      <ellipse cx="0" cy="50" rx="40" ry="14"/><ellipse cx="32" cy="44" rx="32" ry="16"/>
+      <ellipse cx="-30" cy="54" rx="28" ry="12"/>
+    </g>
+  </g>
+
+  <!-- far hills -->
+  <path d="M0 250 Q150 200 320 240 T640 230 T800 250 V330 H0 Z" fill="#10352b" opacity="0.9"/>
+
+  <!-- distant tree line (back) -->
+  <g fill="#13402c" opacity="0.85">
+    <path d="M-20 300 l40 -90 l40 90 Z"/><path d="M60 300 l50 -120 l50 120 Z"/>
+    <path d="M160 300 l40 -100 l40 100 Z"/><path d="M250 300 l55 -130 l55 130 Z"/>
+    <path d="M360 300 l45 -110 l45 110 Z"/><path d="M460 300 l50 -125 l50 125 Z"/>
+    <path d="M560 300 l40 -100 l40 100 Z"/><path d="M650 300 l55 -130 l55 130 Z"/>
+    <path d="M760 300 l50 -120 l50 120 Z"/>
+  </g>
+
+  <!-- nearer pines (darker, framing edges) -->
+  <g fill="#0c281c">
+    <g class="sway" transform="translate(40 300)">
+      <rect x="-6" y="-10" width="12" height="30" fill="#1a1108"/>
+      <path d="M0 -150 l46 70 h-30 l40 60 h-30 l34 50 H-60 l34 -50 h-30 l40 -60 h-30 Z"/>
+    </g>
+    <g class="sway sway2" transform="translate(740 300)">
+      <rect x="-6" y="-10" width="12" height="30" fill="#1a1108"/>
+      <path d="M0 -170 l50 78 h-32 l44 66 h-32 l38 56 H-66 l38 -56 h-32 l44 -66 h-32 Z"/>
+    </g>
+  </g>
+
+  <!-- ground band -->
+  <rect y="300" width="800" height="100" fill="url(#forestGround)"/>
+  <path d="M0 300 Q200 290 400 300 T800 300 V312 H0 Z" fill="#2c5a30" opacity="0.7"/>
+
+  <!-- impact craters & scorched, torn-up turf -->
+  <g>
+    <g transform="translate(150 350)">
+      <ellipse cx="0" cy="1" rx="30" ry="11" fill="#2e5a32" opacity="0.6"/>
+      <ellipse cx="0" cy="0" rx="24" ry="8" fill="#102213"/>
+      <ellipse cx="2" cy="0" rx="13" ry="4" fill="#081610"/>
+      <path stroke="#0a1d0e" stroke-width="1.5" fill="none" d="M-24 -2 l-10 -4 M22 1 l11 -2 M-6 -8 l-4 -8 M9 8 l5 7"/>
+      <ellipse cx="-30" cy="2" rx="3" ry="1.6" fill="#1a3a1e"/>
+      <ellipse cx="28" cy="-3" rx="2.4" ry="1.3" fill="#1a3a1e"/>
+    </g>
+    <g transform="translate(470 374)">
+      <ellipse cx="0" cy="1" rx="22" ry="8" fill="#2e5a32" opacity="0.55"/>
+      <ellipse cx="0" cy="0" rx="17" ry="6" fill="#0e2012"/>
+      <ellipse cx="1" cy="0" rx="9" ry="3" fill="#07140d"/>
+      <path stroke="#0a1d0e" stroke-width="1.4" fill="none" d="M-17 0 l-9 -3 M16 1 l8 4 M2 -6 l3 -7"/>
+    </g>
+    <g transform="translate(700 388)">
+      <ellipse cx="0" cy="0" rx="14" ry="5" fill="#0e2012"/>
+      <ellipse cx="0" cy="0" rx="7" ry="2.4" fill="#07140d"/>
+    </g>
+  </g>
+
+  <!-- wind-blown leaves -->
+  <g fill="#8a6a32">
+    <g transform="translate(0 110)"><path class="leaf" d="M0 0 q5 -6 11 -2 q1 7 -6 9 q-7 0 -5 -7 Z"/></g>
+    <g transform="translate(0 180)"><path class="leaf leaf2" fill="#9c7a3a" d="M0 0 q5 -6 11 -2 q1 7 -6 9 q-7 0 -5 -7 Z"/></g>
+    <g transform="translate(0 240)"><path class="leaf leaf3" fill="#7a5a28" d="M0 0 q5 -6 11 -2 q1 7 -6 9 q-7 0 -5 -7 Z"/></g>
+    <g transform="translate(0 70)"><path class="leaf leaf4" fill="#a8863e" d="M0 0 q5 -6 11 -2 q1 7 -6 9 q-7 0 -5 -7 Z"/></g>
+  </g>
+
+  <!-- fireflies -->
+  <g fill="#e8ff9a">
+    <circle class="firefly" cx="180" cy="330" r="2.2"/>
+    <circle class="firefly firefly2" cx="430" cy="350" r="2"/>
+    <circle class="firefly firefly3" cx="640" cy="335" r="2.4"/>
+  </g>
+
+  <!-- grass tufts + rocks -->
+  <g stroke="#3a6e3a" stroke-width="3" stroke-linecap="round" opacity="0.8" fill="none">
+    <path class="grass" d="M120 360 q-4 -16 -10 -22 M120 360 q0 -18 0 -24 M120 360 q4 -16 10 -22"/>
+    <path class="grass sway2" d="M520 372 q-4 -16 -10 -22 M520 372 q0 -18 0 -24 M520 372 q4 -16 10 -22"/>
+    <path class="grass" d="M300 386 q-4 -14 -9 -20 M300 386 q0 -16 0 -22 M300 386 q4 -14 9 -20"/>
+  </g>
+  <g fill="#23341f">
+    <ellipse cx="220" cy="384" rx="26" ry="9"/>
+    <ellipse cx="600" cy="392" rx="34" ry="11"/>
+  </g>
+</svg>

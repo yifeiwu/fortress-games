@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- fancy ornamental peacock feather fan; base seam left x=0, y34..66 -->
+  <!-- back plume layer (broad teal leaves) -->
+  <g stroke="#13503a" stroke-width="1.6" stroke-linejoin="round">
+    <ellipse cx="56" cy="50" rx="28" ry="10" fill="#2e8f6a" transform="rotate(-46 30 50)"/>
+    <ellipse cx="56" cy="50" rx="28" ry="10" fill="#2e8f6a" transform="rotate(-22 30 50)"/>
+    <ellipse cx="56" cy="50" rx="28" ry="10" fill="#2e8f6a"/>
+    <ellipse cx="56" cy="50" rx="28" ry="10" fill="#2e8f6a" transform="rotate(22 30 50)"/>
+    <ellipse cx="56" cy="50" rx="28" ry="10" fill="#2e8f6a" transform="rotate(46 30 50)"/>
+  </g>
+  <!-- eyed feathers (green/teal) radiating out -->
+  <g stroke="#173a2a" stroke-width="1.6" stroke-linejoin="round">
+    <g transform="rotate(-52 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#3fae5a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(-39 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#43b86a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(-26 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#3fae5a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(-13 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#43b86a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g>
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#3fae5a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(13 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#43b86a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(26 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#3fae5a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(39 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#43b86a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+    <g transform="rotate(52 30 50)">
+      <ellipse cx="52" cy="50" rx="23" ry="7.5" fill="#3fae5a"/>
+      <line x1="31" y1="50" x2="73" y2="50" stroke="#1f6e3a" stroke-width="1" opacity="0.6"/>
+      <circle cx="66" cy="50" r="6" fill="#e8a92a"/>
+      <circle cx="66" cy="50" r="3.4" fill="#15357f"/>
+      <circle cx="64.3" cy="48.3" r="1.1" fill="#5fa0e0"/>
+    </g>
+  </g>
+  <!-- blue feathery base plume -->
+  <g stroke="#10366f" stroke-width="1.6" stroke-linejoin="round">
+    <ellipse cx="30" cy="40" rx="13" ry="6" fill="#1d63c4" transform="rotate(-30 22 50)"/>
+    <ellipse cx="30" cy="60" rx="13" ry="6" fill="#1d63c4" transform="rotate(30 22 50)"/>
+    <ellipse cx="32" cy="50" rx="15" ry="7" fill="#2a78d6"/>
+    <ellipse cx="28" cy="46" rx="11" ry="5" fill="#1f8fb0" transform="rotate(-14 22 50)"/>
+    <ellipse cx="28" cy="54" rx="11" ry="5" fill="#1f8fb0" transform="rotate(14 22 50)"/>
+  </g>
+  <!-- ornate gold base cuff (seam) -->
+  <path d="M0 34 L17 37 L17 63 L0 66 Z" fill="#d8a838" stroke="#7a560f" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M3 40 C7 44 7 56 3 60" fill="none" stroke="#a87a1e" stroke-width="1.6"/>
+  <path d="M9 39 C13 44 13 56 9 61" fill="none" stroke="#f3d27a" stroke-width="1.4" opacity="0.9"/>
+  <path d="M7 47 C10 48 12 50 10 53 C8 51 7 49 7 47 Z" fill="#f3d27a" stroke="#a87a1e" stroke-width="0.8"/>
+  <line x1="17" y1="38" x2="17" y2="62" stroke="#a87a1e" stroke-width="1.4"/>
+</svg>

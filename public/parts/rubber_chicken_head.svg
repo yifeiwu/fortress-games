@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#1a1208" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column -->
+    <path d="M70 32 H100 V68 H70 Z" fill="#ecca2f" stroke="none"/>
+    <path d="M70 32 H100 M70 68 H100" fill="none"/>
+    <!-- floppy chicken head/face (yellow) -->
+    <path d="M30 26 C46 18 66 20 74 34 C80 46 80 60 74 70 C66 80 50 82 40 76 C34 72 34 66 38 62 C30 60 26 52 28 44 C24 40 24 32 30 26 Z" fill="#f2d23a"/>
+    <!-- floppy red comb on top -->
+    <path d="M34 24 C36 14 44 12 46 20 C50 12 58 12 58 22 C64 14 72 16 70 26 C68 34 56 34 50 32 C42 34 36 32 34 24 Z" fill="#d6322a"/>
+    <path d="M44 19 C46 15 50 16 50 21" fill="none" stroke="#a31f1a" stroke-width="1.4"/>
+    <!-- droopy red wattle -->
+    <path d="M44 64 C40 74 42 86 50 88 C56 86 54 76 50 70 C54 68 48 62 44 64 Z" fill="#d6322a"/>
+    <path d="M47 70 C45 76 46 82 50 83" fill="none" stroke="#a31f1a" stroke-width="1.3"/>
+    <!-- upper beak (open, pointing left) -->
+    <path d="M30 44 L12 42 L8 48 L20 52 L34 50 Z" fill="#f0a01c"/>
+    <!-- lower beak -->
+    <path d="M20 52 L36 54 L40 62 L26 64 L18 58 Z" fill="#e08c14"/>
+    <!-- open mouth interior -->
+    <path d="M24 50 L36 52 L36 58 L26 58 Z" fill="#7a2422" stroke="#1a1208" stroke-width="1.4"/>
+    <!-- big googly eye -->
+    <circle cx="46" cy="42" r="12" fill="#a85a52" stroke="#1a1208" stroke-width="1.8"/>
+    <circle cx="46" cy="42" r="8.5" fill="#fbfbf7" stroke="#1a1208" stroke-width="1.4"/>
+    <circle cx="47" cy="43" r="3.4" fill="#1a1208" stroke="none"/>
+    <circle cx="45.5" cy="41.5" r="1.1" fill="#fff" stroke="none"/>
+    <!-- nostril dot on beak -->
+    <circle cx="26" cy="46" r="1" fill="#1a1208" stroke="none"/>
+    <!-- saggy rubber wrinkles -->
+    <g fill="none" stroke="#caa820" stroke-width="1.2" opacity="0.85">
+      <path d="M58 44 q3 4 0 8 M64 50 q3 4 0 8 M56 58 q3 4 0 8 M62 64 q3 4 0 8 M60 36 q3 3 0 6"/>
+    </g>
+  </g>
+</svg>

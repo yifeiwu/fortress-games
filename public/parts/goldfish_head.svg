@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#3a2410" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column -->
+    <path d="M72 32 H100 V68 H72 Z" fill="#f0871c" stroke="none"/>
+    <path d="M72 32 H100 M72 68 H100" fill="none"/>
+    <!-- round fish body/head -->
+    <ellipse cx="44" cy="50" rx="38" ry="33" fill="#f59425"/>
+    <!-- top fin -->
+    <path d="M52 18 L60 8 L66 16 L72 10 L74 20 L66 24 L56 24 Z" fill="#f0871c" stroke="#3a2410" stroke-width="1.6"/>
+    <!-- scaled / shaded right half -->
+    <path d="M58 22 A36 32 0 0 1 58 78 C70 70 76 60 76 50 C76 40 70 30 58 22 Z" fill="#e57e16" stroke="none"/>
+    <g fill="none" stroke="#d97014" stroke-width="1.2" opacity="0.85">
+      <path d="M58 30 q6 5 0 10 M66 32 q6 5 0 10 M58 44 q6 5 0 10 M66 46 q6 5 0 10 M58 58 q6 5 0 10"/>
+    </g>
+    <!-- belly highlight -->
+    <path d="M24 60 C32 74 50 76 60 70 C48 72 34 68 28 56 Z" fill="#ffba52" stroke="none"/>
+    <!-- tiny puckered lips (left) -->
+    <path d="M8 50 C2 46 2 54 8 52 C4 58 12 60 16 54 C18 50 16 46 12 47 C16 44 8 42 8 50 Z" fill="#f0871c" stroke="#3a2410" stroke-width="1.5"/>
+    <ellipse cx="12" cy="51" rx="2" ry="3" fill="#9c4a14" stroke="none"/>
+    <!-- big wide eye -->
+    <ellipse cx="34" cy="44" rx="12" ry="14" fill="#fbfbf7" stroke="#3a2410" stroke-width="1.8"/>
+    <circle cx="34" cy="48" r="6.5" fill="#1a1a1a" stroke="none"/>
+    <circle cx="31" cy="45" r="2" fill="#fff" stroke="none"/>
+    <!-- worried eyebrow -->
+    <path d="M24 28 Q34 24 44 30" fill="none" stroke="#3a2410" stroke-width="2.2"/>
+    <!-- blush -->
+    <g stroke="#ff7a52" stroke-width="1.6" opacity="0.8">
+      <path d="M30 66 L36 62 M36 67 L42 63 M42 67 L48 63"/>
+    </g>
+    <!-- little side fin -->
+    <path d="M58 62 C66 66 74 66 78 62 C72 70 64 70 58 66 Z" fill="#f0871c" stroke="#3a2410" stroke-width="1.5"/>
+    <g fill="none" stroke="#d97014" stroke-width="1"><path d="M62 64 L74 64 M62 67 L73 67"/></g>
+  </g>
+</svg>

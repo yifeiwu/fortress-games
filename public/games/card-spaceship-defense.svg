@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200" role="img" aria-label="Starshield Crisis artwork">
+  <defs>
+    <linearGradient id="ss-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#04121c"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="ss-glow" cx="0.42" cy="0.55" r="0.55">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ss-hull" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cffafe"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="ss-shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67e8f9" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="200" fill="url(#ss-bg)"/>
+  <rect width="400" height="200" fill="url(#ss-glow)"/>
+
+  <!-- stars -->
+  <g fill="#e2e8f0">
+    <circle cx="40" cy="34" r="1.6" opacity="0.9"/>
+    <circle cx="120" cy="22" r="1.1" opacity="0.7"/>
+    <circle cx="300" cy="30" r="1.8" opacity="0.85"/>
+    <circle cx="360" cy="70" r="1.2" opacity="0.6"/>
+    <circle cx="350" cy="150" r="1.5" opacity="0.8"/>
+    <circle cx="70" cy="170" r="1.2" opacity="0.6"/>
+    <circle cx="250" cy="180" r="1.4" opacity="0.7"/>
+    <circle cx="190" cy="20" r="1.1" opacity="0.6"/>
+  </g>
+
+  <!-- incoming fire -->
+  <g stroke="#f87171" stroke-width="4" stroke-linecap="round">
+    <line x1="312" y1="56" x2="356" y2="44"/>
+    <line x1="318" y1="150" x2="362" y2="164"/>
+  </g>
+
+  <!-- shield bubble -->
+  <circle cx="170" cy="104" r="84" fill="url(#ss-shield)" stroke="#67e8f9" stroke-opacity="0.6" stroke-width="2"/>
+  <path d="M170 24 A84 84 0 0 1 254 104" fill="none" stroke="#a5f3fc" stroke-opacity="0.7" stroke-width="3"/>
+
+  <!-- spaceship -->
+  <g transform="translate(170 104)">
+    <ellipse cx="0" cy="22" rx="56" ry="12" fill="#22d3ee" fill-opacity="0.18"/>
+    <path d="M-46 8 q46 -22 92 0 q-22 16 -46 16 q-24 0 -46 -16 z" fill="url(#ss-hull)" stroke="#cffafe" stroke-width="1.5"/>
+    <ellipse cx="0" cy="-4" rx="22" ry="14" fill="#0f1b2e" stroke="#67e8f9" stroke-width="2"/>
+    <ellipse cx="-6" cy="-7" rx="7" ry="4" fill="#a5f3fc" opacity="0.9"/>
+    <!-- engine glow -->
+    <path d="M-18 18 l-14 16 M0 22 l0 18 M18 18 l14 16" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  </g>
+</svg>
