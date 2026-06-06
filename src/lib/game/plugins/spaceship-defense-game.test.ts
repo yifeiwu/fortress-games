@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { emergencyJumpChance, spaceshipDefenseGameDefinition } from "@/lib/game/plugins/spaceship-defense-game";
-import type { Player, Room } from "@/lib/types";
+import { emergencyJumpChance, spaceshipDefenseGameDefinition, spawnStreamMax, spawnStreamMin, threatLevelForRound } from "@/lib/game/plugins/spaceship-defense-game";
+import type { GameState, Player, Room } from "@/lib/types";
 
 function createPlayers(): Player[] {
   return [
@@ -33,7 +33,35 @@ function startGame(room: Room) {
   });
 }
 
-test("start_game creates ship and starting threats", () => {
+// Advance one full round from a player_turn: both crew pass, then the enemy
+// phase closes and the next round opens (spawning its stream). Clears the field
+// and heals the hull first so a long run of rounds never ends in a loss.
+function advanceRound(room: Room, state: GameState, baseNow: number): GameState {
+  let next: GameState = {
+    ...state,
+    spaceship: {
+      ...state.spaceship!,
+      threats: [],
+      ship: { ...state.spaceship!.ship, hull: state.spaceship!.ship.maxHull }
+    }
+  };
+  next = spaceshipDefenseGameDefinition.applyCommand({
+    room,
+    state: next,
+    command: { type: "submit_spaceship_action", action: "pass" },
+    context: { now: baseNow, actorPlayerId: "p1" }
+  });
+  next = spaceshipDefenseGameDefinition.applyCommand({
+    room,
+    state: next,
+    command: { type: "submit_spaceship_action", action: "pass" },
+    context: { now: baseNow + 1, actorPlayerId: "p2" }
+  });
+  assert.equal(next.state, "enemy_phase");
+  return spaceshipDefenseGameDefinition.closeRound({ room, state: next, now: baseNow + 2 }).nextState;
+}
+
+test("start_game opens with a stream of contacts at T-3", () => {
   const room = createRoom(createPlayers());
   const state = startGame(room);
 
@@ -41,64 +69,82 @@ test("start_game creates ship and starting threats", () => {
   assert.equal(state.spaceship?.ship.hull, 10);
   assert.equal(state.spaceship?.ship.jumpTarget, 8);
   assert.equal(state.spaceship?.activePlayerId, "p1");
-  // The battle always opens with a fixed set: 2 missiles + 1 raider.
-  assert.equal(state.spaceship?.threats.length, 3);
-  assert.equal(state.spaceship?.threats.filter((threat) => threat.kind === "missile").length, 2);
-  assert.equal(state.spaceship?.threats.filter((threat) => threat.kind === "raider").length, 1);
-  // The first reinforcement wave is a random 3-5 set, due in 3 rounds.
-  const reinforcements = state.spaceship?.reinforcements ?? [];
-  assert.ok(reinforcements.length >= 3 && reinforcements.length <= 5);
-  assert.ok(state.spaceship?.threats.every((threat) => threat.attacksInTurns >= 1 && threat.attacksInTurns <= 5));
-  assert.ok(reinforcements.every((entry) => entry.arrivesInRounds === 3));
+  const threats = state.spaceship?.threats ?? [];
+  // The opening stream is 1-3 contacts (floored to at least one), all entering at
+  // the far zone (T-3), and never a Destroyer on the initial round.
+  assert.ok(threats.length >= 1 && threats.length <= 3);
+  assert.ok(threats.every((threat) => threat.attacksInTurns === 3));
+  assert.ok(threats.every((threat) => threat.kind !== "destroyer"));
+  // The reinforcement queue is gone.
+  assert.equal((state.spaceship as unknown as { reinforcements?: unknown }).reinforcements, undefined);
 });
 
-test("a reinforcement wave jumps in and queues the next wave", () => {
+test("each round spawns a fresh stream at T-3 with a destroyer on the 3-round cadence", () => {
   const room = createRoom(createPlayers());
   let state = startGame(room);
-  assert.ok(state.spaceship);
-  const incomingWave = state.spaceship.reinforcements;
-  assert.ok(incomingWave.length >= 3 && incomingWave.length <= 5);
 
-  // Make the queued wave due next round and clear the field so the round
-  // completes into the enemy phase.
-  state.spaceship = {
-    ...state.spaceship,
-    threats: [],
-    reinforcements: incomingWave.map((entry) => ({ ...entry, arrivesInRounds: 1 }))
-  };
-  state = spaceshipDefenseGameDefinition.applyCommand({
-    room,
-    state,
-    command: { type: "submit_spaceship_action", action: "pass" },
-    context: { now: 3000, actorPlayerId: "p1" }
-  });
-  state = spaceshipDefenseGameDefinition.applyCommand({
-    room,
-    state,
-    command: { type: "submit_spaceship_action", action: "pass" },
-    context: { now: 4000, actorPlayerId: "p2" }
-  });
-  assert.equal(state.state, "enemy_phase");
+  const destroyerRounds: number[] = [];
+  for (let round = 0; round <= 9; round += 1) {
+    const threats = state.spaceship?.threats ?? [];
+    assert.equal(state.roundIndex, round);
+    // Every freshly spawned contact sits at the far zone.
+    assert.ok(threats.every((threat) => threat.attacksInTurns === 3));
+    if (threats.some((threat) => threat.kind === "destroyer")) {
+      destroyerRounds.push(round);
+    }
+    state = advanceRound(room, state, 3000 + round * 10);
+  }
 
-  const opened = spaceshipDefenseGameDefinition.closeRound({ room, state, now: 9000 }).nextState;
-  assert.equal(opened.roundIndex, 1);
-  // The whole due wave spawns into the threat row.
-  assert.equal(opened.spaceship?.threats.length, incomingWave.length);
-  // A fresh random wave (3-5) is queued to keep reinforcements coming, due in
-  // another full interval.
-  const queued = opened.spaceship?.reinforcements ?? [];
-  assert.ok(queued.length >= 3 && queued.length <= 5);
-  assert.ok(queued.every((entry) => entry.arrivesInRounds === 3));
-  // Spawned threats carry their pre-rolled countdown.
-  assert.ok(opened.spaceship?.threats.every((threat) => threat.attacksInTurns >= 1 && threat.attacksInTurns <= 5));
+  // Destroyer joins every 3rd round, excluding the initial round 0.
+  assert.deepEqual(destroyerRounds, [3, 6, 9]);
+});
+
+test("threat level starts at 1 and climbs a tier every few rounds", () => {
+  // The pure tier function: tier 1 opens, climbing every 3 rounds.
+  assert.equal(threatLevelForRound(0), 1);
+  assert.equal(threatLevelForRound(2), 1);
+  assert.equal(threatLevelForRound(3), 2);
+  assert.equal(threatLevelForRound(6), 3);
+
+  const room = createRoom(createPlayers());
+  let state = startGame(room);
+  // The opening round establishes tier 1 on the stored state.
+  assert.equal(state.spaceship?.threatLevel, 1);
+
+  // Stored threat level tracks the round as it advances.
+  for (let round = 0; round < 6; round += 1) {
+    assert.equal(state.spaceship?.threatLevel, threatLevelForRound(round));
+    state = advanceRound(room, state, 3000 + round * 10);
+  }
+  assert.equal(state.roundIndex, 6);
+  assert.equal(state.spaceship?.threatLevel, 3);
+});
+
+test("the random spawn stream scales with crew size", () => {
+  // An n-player crew faces between n-2 and n contacts per round.
+  assert.equal(spawnStreamMax(4), 4);
+  assert.equal(spawnStreamMin(4), 2);
+  assert.equal(spawnStreamMax(1), 1);
+  assert.equal(spawnStreamMin(1), 1);
+  assert.equal(spawnStreamMax(2), 2);
+  assert.equal(spawnStreamMin(2), 1);
+  assert.equal(spawnStreamMax(8), 8);
+  assert.equal(spawnStreamMin(8), 6);
+  // Both bounds rise monotonically with crew size, and the floor never exceeds
+  // the ceiling.
+  for (let crew = 2; crew <= 12; crew += 1) {
+    assert.ok(spawnStreamMax(crew) >= spawnStreamMax(crew - 1));
+    assert.ok(spawnStreamMin(crew) >= spawnStreamMin(crew - 1));
+    assert.ok(spawnStreamMin(crew) <= spawnStreamMax(crew));
+  }
 });
 
 test("shoot rolls bounded damage and reveals stealth ships", () => {
   const room = createRoom(createPlayers());
   let state = startGame(room);
   assert.ok(state.spaceship);
-  // Drop a stealth ship onto the field — the starting set is missiles + a raider.
-  // Give it more health than the max single-shot roll (4) so it always survives
+  // Drop a single stealth ship onto the field, replacing the opening stream.
+  // Give it more health than the max single-shot roll (3) so it always survives
   // one shot; otherwise the assertions below would be skipped whenever the roll
   // happened to kill it.
   state.spaceship = {
@@ -132,9 +178,9 @@ test("shoot rolls bounded damage and reveals stealth ships", () => {
   const updated = state.spaceship?.threats.find((threat) => threat.id === stealth.id);
   assert.ok(updated, "the stealth ship survives a single bounded shot");
   assert.equal(updated.attackRevealed, true);
-  // shoot rolls 0-4 damage, so health lands within that bound.
-  assert.ok(updated.health >= stealth.health - 4);
-  assert.ok(updated.health <= stealth.health);
+  // shoot rolls 1-3 damage, so the target always takes at least 1 and at most 3.
+  assert.ok(updated.health >= stealth.health - 3);
+  assert.ok(updated.health <= stealth.health - 1);
   assert.equal(state.spaceship?.activePlayerId, "p2");
 });
 

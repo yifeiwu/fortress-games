@@ -51,7 +51,6 @@ export default function RoomPage() {
   const [chatInput, setChatInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [codeCopied, setCodeCopied] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -325,36 +324,6 @@ export default function RoomPage() {
     window.setTimeout(() => setLinkCopied(false), 2000);
   }
 
-  async function copyText(value: string, onDone: () => void) {
-    try {
-      await navigator.clipboard.writeText(value);
-    } catch {
-      const textarea = document.createElement("textarea");
-      textarea.value = value;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand("copy");
-      } catch {
-        document.body.removeChild(textarea);
-        setError("Couldn't copy. Copy it manually instead.");
-        return;
-      }
-      document.body.removeChild(textarea);
-    }
-    onDone();
-  }
-
-  async function copyRoomCode() {
-    const code = room?.code ?? roomCode;
-    await copyText(code, () => {
-      setCodeCopied(true);
-      window.setTimeout(() => setCodeCopied(false), 2000);
-    });
-  }
-
   async function sendChat(e: FormEvent) {
     e.preventDefault();
     const content = chatInput.trim();
@@ -470,7 +439,7 @@ export default function RoomPage() {
       {/* Announce copy success to assistive tech; the button label swap alone
           isn't reliably read out. */}
       <span role="status" aria-live="polite" className="sr-only">
-        {linkCopied ? "Room link copied to clipboard." : codeCopied ? "Room code copied to clipboard." : ""}
+        {linkCopied ? "Room link copied to clipboard." : ""}
       </span>
 
       <section className="relative grid gap-6 lg:grid-cols-3">
@@ -490,9 +459,6 @@ export default function RoomPage() {
                   <p className="mt-1 font-mono text-4xl font-bold tracking-[0.35em] text-accent">{room.code}</p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Button variant="primary" onClick={copyRoomCode}>
-                    {codeCopied ? "✓ Code copied" : "Copy code"}
-                  </Button>
                   <Button variant="secondary" onClick={copyRoomLink}>
                     {linkCopied ? "✓ Link copied" : "Copy invite link"}
                   </Button>
@@ -518,23 +484,6 @@ export default function RoomPage() {
                     {room.players.length}/{MAX_ROOM_PLAYERS}
                   </span>
                 </div>
-                {me?.isHost && clientGame?.supportsBots ? (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => postAction({ action: "add_bot" })}
-                    disabled={room.players.length >= MAX_ROOM_PLAYERS || activeSlotsFull}
-                    title={
-                      room.players.length >= MAX_ROOM_PLAYERS
-                        ? `Room is full (max ${MAX_ROOM_PLAYERS} players)`
-                        : activeSlotsFull
-                        ? `This game seats ${lobbyConfig?.maxActivePlayers} players`
-                        : undefined
-                    }
-                  >
-                    Add fortress-bot
-                  </Button>
-                ) : null}
               </div>
               <div className="mt-2 space-y-1.5 text-sm">
                 {room.players.map((player) => {
@@ -579,6 +528,25 @@ export default function RoomPage() {
                   );
                 })}
               </div>
+              {me?.isHost && clientGame?.supportsBots ? (
+                <div className="mt-3">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => postAction({ action: "add_bot" })}
+                    disabled={room.players.length >= MAX_ROOM_PLAYERS || activeSlotsFull}
+                    title={
+                      room.players.length >= MAX_ROOM_PLAYERS
+                        ? `Room is full (max ${MAX_ROOM_PLAYERS} players)`
+                        : activeSlotsFull
+                        ? `This game seats ${lobbyConfig?.maxActivePlayers} players`
+                        : undefined
+                    }
+                  >
+                    Add fortress-bot
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (

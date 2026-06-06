@@ -171,6 +171,98 @@ const config: Config = {
           "48%": { transform: "translateX(150px)" },
           "72%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(0)" }
+        },
+        // Seamless horizontal parallax for the starfield: a 200%-wide layer (two
+        // identical tiles) slides one viewport left, then loops. Layers run at
+        // different speeds to fake depth.
+        starScroll: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" }
+        },
+        // Pulsing red-alert vignette/overlay when the ship is in danger.
+        redAlertPulse: {
+          "0%, 100%": { opacity: "0.15" },
+          "50%": { opacity: "0.55" }
+        },
+        // Weapon tracer: a beam that extends from the shooter toward the target
+        // (origin-left scaleX) then fades.
+        tracerSweep: {
+          "0%": { transform: "scaleX(0)", opacity: "0" },
+          "12%": { opacity: "1" },
+          "55%": { transform: "scaleX(1)", opacity: "1" },
+          "100%": { transform: "scaleX(1)", opacity: "0" }
+        },
+        // Impact/explosion burst: a flash that scales up and fades out.
+        burst: {
+          "0%": { transform: "scale(0.2)", opacity: "0.95" },
+          "100%": { transform: "scale(1.9)", opacity: "0" }
+        },
+        // Positional weapon beam in the tactical viewport: a quick bright flash
+        // along an SVG line between two field points, then fade.
+        beamFlash: {
+          "0%": { opacity: "0" },
+          "18%": { opacity: "1" },
+          "60%": { opacity: "0.9" },
+          "100%": { opacity: "0" }
+        },
+        // Shared 360° rotation, reused (at different speeds) by the radar sweep
+        // and the slowly tumbling asteroids in the tactical viewport.
+        spin360: {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" }
+        },
+        // ── Jump cinematic (played on the tactical view when the game ends) ──
+        // Camera push: the whole cinematic scene slowly zooms in.
+        jumpZoom: {
+          "0%": { transform: "scale(0.96)" },
+          "100%": { transform: "scale(1.32)" }
+        },
+        // A wormhole portal blooming open with a swirl.
+        wormholeForm: {
+          "0%": { transform: "scale(0) rotate(0deg)", opacity: "0" },
+          "35%": { opacity: "1" },
+          "100%": { transform: "scale(1) rotate(160deg)", opacity: "1" }
+        },
+        // The ship streaks in from the left and is swallowed by the portal.
+        shipWarp: {
+          "0%": { transform: "translateX(-130px) scale(1) rotate(0deg)", opacity: "0" },
+          "22%": { opacity: "1" },
+          "72%": { transform: "translateX(36px) scale(0.5) rotate(10deg)", opacity: "1" },
+          "100%": { transform: "translateX(74px) scale(0) rotate(28deg)", opacity: "0" }
+        },
+        // The ship shudders, swells, then bursts apart.
+        shipExplode: {
+          "0%": { transform: "scale(1) translate(0,0)", opacity: "1" },
+          "45%": { transform: "scale(1.05) translate(2px,-1px)", opacity: "1" },
+          "60%": { transform: "scale(1.28)", opacity: "1" },
+          "72%": { transform: "scale(0.15)", opacity: "0" },
+          "100%": { transform: "scale(0)", opacity: "0" }
+        },
+        // Expanding shockwave ring from the blast.
+        shockwave: {
+          "0%": { transform: "translate(-50%,-50%) scale(0.1)", opacity: "0.9" },
+          "100%": { transform: "translate(-50%,-50%) scale(2.6)", opacity: "0" }
+        },
+        // A debris fragment hurled outward; direction/spin fed via CSS vars.
+        debrisFly: {
+          "0%": { transform: "translate(-50%,-50%) translate(0,0) scale(1) rotate(0deg)", opacity: "1" },
+          "100%": {
+            transform:
+              "translate(-50%,-50%) translate(var(--dx,0), var(--dy,0)) scale(0.2) rotate(var(--dr,200deg))",
+            opacity: "0"
+          }
+        },
+        // A warp light streak stretching out from the portal core.
+        warpStreak: {
+          "0%": { transform: "scaleX(0)", opacity: "0" },
+          "30%": { opacity: "0.85" },
+          "100%": { transform: "scaleX(1)", opacity: "0" }
+        },
+        // A brief full-frame colour flash at the climax of the cinematic.
+        cineFlash: {
+          "0%": { opacity: "0" },
+          "45%": { opacity: "0.85" },
+          "100%": { opacity: "0" }
         }
       },
       animation: {
@@ -198,7 +290,23 @@ const config: Config = {
         "ko-flyoff-left": "koFlyoffLeft 1.1s ease-in both",
         "ko-flyoff-right": "koFlyoffRight 1.1s ease-in both",
         "winner-lunge-left": "winnerLungeLeft 0.9s ease-out both",
-        "winner-lunge-right": "winnerLungeRight 0.9s ease-out both"
+        "winner-lunge-right": "winnerLungeRight 0.9s ease-out both",
+        "star-scroll-slow": "starScroll 140s linear infinite",
+        "star-scroll-fast": "starScroll 70s linear infinite",
+        "red-alert": "redAlertPulse 1.5s ease-in-out infinite",
+        tracer: "tracerSweep 0.55s ease-out both",
+        burst: "burst 0.6s ease-out both",
+        "beam-flash": "beamFlash 0.55s ease-out both",
+        "asteroid-spin": "spin360 50s linear infinite",
+        "jump-zoom": "jumpZoom 2.6s ease-in both",
+        "wormhole-form": "wormholeForm 1.1s ease-out both",
+        "wormhole-spin": "spin360 2.4s linear infinite",
+        "ship-warp": "shipWarp 1.7s ease-in both",
+        "ship-explode": "shipExplode 1s ease-in both",
+        shockwave: "shockwave 1.1s ease-out both",
+        "debris-fly": "debrisFly 1.2s ease-out both",
+        "warp-streak": "warpStreak 1.3s ease-out infinite",
+        "cine-flash": "cineFlash 0.5s ease-out both"
       }
     }
   },

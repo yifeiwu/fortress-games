@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { playerName as resolvePlayerName } from "@/lib/game/players";
 import { useCountdown, useNumberChange, useStepPlayback } from "@/app/room/[code]/games/shared";
 import { GameShell, HostRestartFooter } from "@/app/room/[code]/games/shared-ui";
-import type { Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipHitDetail, SpaceshipReinforcement, SpaceshipThreat } from "@/lib/types";
+import type { Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipHitDetail, SpaceshipShipState, SpaceshipThreat, SpaceshipThreatKind } from "@/lib/types";
 
 interface SpaceshipDefenseGameProps {
   room: Room;
@@ -15,7 +15,7 @@ interface SpaceshipDefenseGameProps {
 }
 
 // Visual scale for the turn timer bar. Mirrors TURN_DURATION_MS in the plugin.
-const TURN_SECONDS = 40;
+const TURN_SECONDS = 30;
 
 // Mirrors ACTION_ENERGY_COST / ENERGY_PER_TURN in the spaceship-defense plugin.
 const ENERGY_COST: Record<SpaceshipActionType, number> = {
@@ -27,6 +27,28 @@ const ENERGY_COST: Record<SpaceshipActionType, number> = {
   pass: 0
 };
 const ENERGY_PER_TURN = 1;
+
+// Mirrors ROUNDS_PER_THREAT_TIER / threatLevelForRound in the plugin: the
+// escalation tier climbs one step every few rounds and drives the spawn ramp.
+const ROUNDS_PER_THREAT_TIER = 3;
+function threatLevelForRound(roundIndex: number): number {
+  return Math.floor(Math.max(0, roundIndex) / ROUNDS_PER_THREAT_TIER) + 1;
+}
+
+// Named bands for the threat meter (index = tier - 1; the last entry covers all
+// higher tiers). Each carries the label and a colour that climbs green→red so
+// the rising danger reads at a glance.
+const THREAT_TIERS = [
+  { label: "Skirmish", bar: "bg-emerald-400", text: "text-emerald-300" },
+  { label: "Elevated", bar: "bg-lime-400", text: "text-lime-300" },
+  { label: "Severe", bar: "bg-amber-400", text: "text-amber-300" },
+  { label: "Critical", bar: "bg-orange-500", text: "text-orange-300" },
+  { label: "Overrun", bar: "bg-red-500", text: "text-red-300" }
+] as const;
+
+function threatTier(level: number) {
+  return THREAT_TIERS[Math.min(THREAT_TIERS.length, Math.max(1, level)) - 1];
+}
 
 // Shared base style for the crew action buttons (gradient set per-button inline).
 const ACTION_BUTTON =
@@ -183,17 +205,56 @@ function EnergyMark({ className = "h-3 w-3" }: { className?: string }) {
   return <Icon name="energy" className={`inline-block align-[-0.125em] ${className}`} />;
 }
 
-// A deterministic starfield (seeded so server and client render identically and
-// avoid hydration mismatches). Drawn behind the HUD for spaceship ambiance.
-const STARS = (() => {
-  let seed = 0x9e3779b9;
+// Honours the OS "reduce motion" setting. The heavier ambient effects (parallax
+// scroll, screen shake, the red-alert pulse) check this so motion-sensitive
+// players get a calm, static HUD instead.
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+// Tracks a narrow (phone-sized) viewport so the tactical view can shrink its
+// sprites and keep the swarm from crowding the player's ship.
+function useIsCompact(): boolean {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 640px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return compact;
+}
+
+interface Star {
+  id: number;
+  left: number;
+  top: number;
+  size: number;
+  delay: number;
+  duration: number;
+  opacity: number;
+}
+
+// Deterministic star generation (seeded so server and client render identically
+// and avoid hydration mismatches).
+function makeStars(count: number, seedInit: number): Star[] {
+  let seed = seedInit;
   const rand = () => {
     seed = (seed + 0x6d2b79f5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  return Array.from({ length: 72 }, (_, id) => ({
+  return Array.from({ length: count }, (_, id) => ({
     id,
     left: rand() * 100,
     top: rand() * 100,
@@ -202,27 +263,53 @@ const STARS = (() => {
     duration: 2.4 + rand() * 3.6,
     opacity: 0.25 + rand() * 0.6
   }));
-})();
+}
+
+// Two depth layers: a dim, slow far field and a brighter, faster near field.
+const FAR_STARS = makeStars(56, 0x9e3779b9);
+const NEAR_STARS = makeStars(30, 0x85ebca6b);
+
+// One parallax layer. The layer is 200% wide and holds the same stars twice
+// (left half + right half) so the scroll loops seamlessly. `scroll` is the
+// per-layer speed animation (omitted when reduced motion is on).
+function StarLayer({ stars, scroll, sizeScale }: { stars: Star[]; scroll: string; sizeScale: number }) {
+  const tile = (offset: number) =>
+    stars.map((star) => (
+      <span
+        key={`${offset}-${star.id}`}
+        className="animate-twinkle absolute rounded-full bg-white"
+        style={{
+          left: `${offset + star.left / 2}%`,
+          top: `${star.top}%`,
+          width: `${star.size * sizeScale}px`,
+          height: `${star.size * sizeScale}px`,
+          opacity: star.opacity,
+          animationDelay: `${star.delay}s`,
+          animationDuration: `${star.duration}s`
+        }}
+      />
+    ));
+  return (
+    <div className={`absolute inset-y-0 left-0 w-[200%] ${scroll}`}>
+      {tile(0)}
+      {tile(50)}
+    </div>
+  );
+}
 
 function Starfield() {
+  const reduced = usePrefersReducedMotion();
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/* Slow-drifting nebula/planet art for parallax depth behind the stars. */}
+      <img
+        src="/backdrops/spaceship_defense.svg"
+        alt=""
+        className={`absolute inset-0 h-full w-full scale-110 object-cover opacity-25 ${reduced ? "" : "animate-float-slow"}`}
+      />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(56,189,248,0.12),transparent_55%),radial-gradient(circle_at_85%_85%,rgba(168,85,247,0.12),transparent_55%)]" />
-      {STARS.map((star) => (
-        <span
-          key={star.id}
-          className="animate-twinkle absolute rounded-full bg-white"
-          style={{
-            left: `${star.left}%`,
-            top: `${star.top}%`,
-            width: `${star.size}px`,
-            height: `${star.size}px`,
-            opacity: star.opacity,
-            animationDelay: `${star.delay}s`,
-            animationDuration: `${star.duration}s`
-          }}
-        />
-      ))}
+      <StarLayer stars={FAR_STARS} scroll={reduced ? "" : "animate-star-scroll-slow"} sizeScale={0.8} />
+      <StarLayer stars={NEAR_STARS} scroll={reduced ? "" : "animate-star-scroll-fast"} sizeScale={1.3} />
     </div>
   );
 }
@@ -317,116 +404,633 @@ function ShipStat({
   );
 }
 
-function ThreatCard({
-  threat,
-  selected,
-  disabled,
-  onSelect
-}: {
-  threat: SpaceshipThreat;
-  selected: boolean;
-  disabled: boolean;
-  onSelect: () => void;
-}) {
-  const tone = THREAT_TONES[threat.kind] ?? "border-slate-600 bg-slate-800";
-  const imminent = threat.attacksInTurns <= 1;
-  const killFirst = threat.oneShot && threat.kind !== "missile";
+// The escalation meter, drawn as a compact HUD overlay inside the tactical view
+// (top-right). A small bar fills across the current tier band so it visibly
+// creeps up each round and "ticks over" into a scarier, redder tier as the
+// threat level climbs. At the top tier it pulses to signal the field is about
+// to be overrun — a legible nudge to charge and run.
+function ThreatLevelMeter({ level, roundIndex, reducedMotion }: { level: number; roundIndex: number; reducedMotion: boolean }) {
+  const tier = threatTier(level);
+  const isTopTier = level >= THREAT_TIERS.length;
+  // Fill within the current tier band; pin to full once at the top tier.
+  const progress = isTopTier ? 1 : (roundIndex % ROUNDS_PER_THREAT_TIER) / ROUNDS_PER_THREAT_TIER;
+  const percent = Math.round(progress * 100);
+  const rising = threatLevelForRound(roundIndex + 1) > level;
+  const hint = isTopTier ? "Field overrun — escape now" : rising ? "Threat rises next round" : "Reinforcements keep building";
   return (
     <div
-      className={`rounded-lg border p-3 text-left transition ${tone} ${
-        selected ? "ring-2 ring-cyan-300" : ""
-      } ${imminent ? "animate-pulse border-red-400/70" : ""}`}
+      className={`absolute right-2 top-2 z-20 w-36 rounded-lg border px-2 py-1.5 backdrop-blur-sm ${
+        isTopTier ? "border-red-500/60 bg-red-950/50" : "border-slate-600/60 bg-slate-950/70"
+      }`}
+      title={hint}
     >
-      <button
-        type="button"
-        className="block w-full text-left disabled:cursor-not-allowed disabled:opacity-75"
-        onClick={onSelect}
-        disabled={disabled}
-        aria-pressed={selected}
-        aria-label={`${threat.name}, hull ${Math.max(0, threat.health)} of ${threat.maxHealth}, attacks in ${threat.attacksInTurns} turns`}
+      <div className="flex items-center gap-1">
+        <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-300">
+          <Icon name="warning" className={`h-3 w-3 ${tier.text}`} />
+          Threat
+        </span>
+      </div>
+      <div
+        className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800"
+        role="progressbar"
+        aria-label={`Threat level ${tier.label}, tier ${level}`}
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className="inline-flex items-center gap-1 rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-slate-300">
-              <Icon name={threat.kind} className="h-3 w-3" />
-              {THREAT_TAGS[threat.kind] ?? "???"}
-            </span>
-            <p className="mt-1 text-xs text-slate-400">
-              Hull {Math.max(0, threat.health)} / {threat.maxHealth}
-            </p>
-          </div>
-          <span
-            className={`rounded-full border px-2 py-0.5 text-xs ${
-              imminent
-                ? "border-red-400/60 bg-red-500/20 text-red-100"
-                : "border-slate-500/50 bg-slate-950/60 text-slate-200"
-            }`}
-          >
-            T-{threat.attacksInTurns}
-          </span>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          <span className="rounded bg-slate-950/50 px-2 py-1">
-            Attack: <span className="font-semibold">{threat.attackRevealed ? threat.attack : "?"}</span>
-          </span>
-          <span className="rounded bg-slate-950/50 px-2 py-1">
-            {threat.oneShot ? "One-shot" : `Repeats T-${threat.attackInterval}`}
-          </span>
-        </div>
-        {killFirst ? (
-          <p className="mt-2 flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1 text-[11px] font-semibold text-amber-100">
-            <Icon name="warning" className="h-3 w-3 shrink-0" />
-            Kill first — fires once for big damage
-          </p>
-        ) : null}
-      </button>
-      <button
-        type="button"
-        className={`mt-2 w-full rounded px-2 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-          selected
-            ? "bg-accent text-slate-950"
-            : "border border-slate-500/60 bg-slate-950/50 text-slate-200 hover:border-accent"
-        }`}
-        onClick={onSelect}
-        disabled={disabled}
-        aria-pressed={selected}
-      >
-        {selected ? "Targeted" : "Target"}
-      </button>
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${tier.bar} ${isTopTier && !reducedMotion ? "animate-pulse" : ""}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
     </div>
   );
 }
 
-// Telegraphs queued reinforcements so the crew can prep for the next wave before
-// it lands. Sorted soonest-first; the imminent wave is highlighted.
-function IncomingReinforcements({ reinforcements }: { reinforcements: SpaceshipReinforcement[] }) {
-  if (!reinforcements.length) return null;
-  const sorted = [...reinforcements].sort((a, b) => a.arrivesInRounds - b.arrivesInRounds);
+// Compact readout for the threat the player has targeted on the battlefield.
+// Brings back the attack value / firing cadence that the old card grid showed,
+// without re-introducing a whole grid: pick a ship in the viewport, read its
+// stats here. Renders a hint when nothing is selected.
+function SelectedThreatDetail({ threat }: { threat: SpaceshipThreat | undefined }) {
+  if (!threat) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">
+        Select a ship in the tactical view to inspect its weapons.
+      </div>
+    );
+  }
+  const tone = THREAT_TONES[threat.kind] ?? "border-slate-600 bg-slate-800";
+  const imminent = threat.attacksInTurns <= 1;
+  const killFirst = threat.oneShot && threat.kind !== "missile";
   return (
-    <div className="rounded-lg border border-fuchsia-700/40 bg-fuchsia-950/20 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-200">Incoming reinforcements</h4>
-        <span className="text-xs text-fuchsia-300/80">{reinforcements.length} inbound</span>
+    <div className={`rounded-xl border p-3 ${tone} ${imminent ? "border-red-400/70" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="inline-flex items-center gap-1 rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-slate-200">
+          <Icon name={threat.kind} className="h-3 w-3" />
+          {THREAT_TAGS[threat.kind] ?? "???"}
+        </span>
+        <span className="font-semibold text-slate-100">{threat.name}</span>
+        <span
+          className={`ml-auto rounded-full border px-2 py-0.5 ${
+            imminent ? "border-red-400/60 bg-red-500/20 text-red-100" : "border-slate-500/50 bg-slate-950/60 text-slate-200"
+          }`}
+        >
+          T-{threat.attacksInTurns}
+        </span>
       </div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {sorted.map((entry) => {
-          const tone = THREAT_TONES[entry.kind] ?? "border-slate-600 bg-slate-800";
-          const imminent = entry.arrivesInRounds <= 1;
-          return (
-            <span
-              key={entry.id}
-              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${tone} ${imminent ? "ring-1 ring-fuchsia-300/70" : ""}`}
-              title={`${entry.name} arrives in ${entry.arrivesInRounds} round${entry.arrivesInRounds === 1 ? "" : "s"}`}
-            >
-              <span className="rounded bg-slate-950/70 px-1 py-0.5 text-[9px] font-bold tracking-wider text-slate-300">
-                {THREAT_TAGS[entry.kind] ?? "???"}
+      <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+        <span className="rounded bg-slate-950/50 px-2 py-1">
+          Hull <span className="font-semibold text-slate-100">{Math.max(0, threat.health)} / {threat.maxHealth}</span>
+        </span>
+        <span className="rounded bg-slate-950/50 px-2 py-1">
+          Attack <span className="font-semibold text-slate-100">{threat.attackRevealed ? threat.attack : "?"}</span>
+        </span>
+        <span className="rounded bg-slate-950/50 px-2 py-1">
+          {threat.oneShot ? "One-shot" : `Repeats T-${threat.attackInterval}`}
+        </span>
+      </div>
+      {killFirst ? (
+        <p className="mt-2 flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1 text-[11px] font-semibold text-amber-100">
+          <Icon name="warning" className="h-3 w-3 shrink-0" />
+          Kill first — fires once for big damage
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tactical viewport: the ship and the live threats sharing one asteroid/wreckage
+// field, with three approach zones plotting how close each threat is to firing.
+// ---------------------------------------------------------------------------
+
+// Stable 0..1 hash from a string, so each threat keeps the same
+// spot in the field (and on the radar) frame to frame.
+function hash01(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967296;
+}
+
+interface Asteroid {
+  id: number;
+  left: number;
+  top: number;
+  size: number;
+  delay: number;
+  duration: number;
+  spin: number;
+  shade: number;
+}
+
+function makeAsteroids(count: number, seedInit: number): Asteroid[] {
+  let seed = seedInit;
+  const rand = () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return Array.from({ length: count }, (_, id) => ({
+    id,
+    left: rand() * 100,
+    top: rand() * 100,
+    size: 26 + rand() * 58,
+    delay: rand() * 6,
+    duration: 5 + rand() * 6,
+    spin: 34 + rand() * 50,
+    shade: rand()
+  }));
+}
+
+const ASTEROIDS = makeAsteroids(7, 0x1b873593);
+
+function AsteroidShape({ className = "", style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg viewBox="0 0 100 100" className={className} style={style} aria-hidden="true">
+      <path d="M50 6 72 14 90 34 86 58 70 86 44 92 18 78 8 52 16 26 34 12Z" fill="currentColor" />
+      <circle cx="40" cy="40" r="7" fill="rgba(0,0,0,0.28)" />
+      <circle cx="62" cy="58" r="10" fill="rgba(0,0,0,0.22)" />
+      <circle cx="58" cy="28" r="5" fill="rgba(0,0,0,0.2)" />
+    </svg>
+  );
+}
+
+// Side-view player ship with a shield bubble (opacity scales with shields) and a
+// hull tint that shifts amber/red as integrity drops.
+function ShipSprite({ shieldRatio, hullRatio, reducedMotion, scale = 1 }: { shieldRatio: number; hullRatio: number; reducedMotion: boolean; scale?: number }) {
+  const hullColor = hullRatio <= 0.3 ? "#f87171" : hullRatio <= 0.6 ? "#fbbf24" : "#67e8f9";
+  return (
+    <div className="relative">
+      {shieldRatio > 0 ? (
+        <span
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-300/70 ${reducedMotion ? "" : "animate-pulse"}`}
+          style={{ width: 96 * scale, height: 96 * scale, opacity: 0.2 + shieldRatio * 0.55, boxShadow: "inset 0 0 18px rgba(34,211,238,0.55)" }}
+          aria-hidden="true"
+        />
+      ) : null}
+      <svg viewBox="0 0 80 48" width={78 * scale} height={47 * scale} className="relative drop-shadow-[0_0_10px_rgba(34,211,238,0.45)]" aria-hidden="true">
+        <path d="M11 24 -3 18 3 24 -3 30Z" fill="#fb923c" className={reducedMotion ? "" : "animate-pulse"} />
+        <path d="M8 24 Q34 9 64 17 Q77 21 64 31 Q34 39 8 24Z" fill={hullColor} stroke="#0e7490" strokeWidth="1.5" />
+        <path d="M30 17 37 4 46 15Z" fill="#22d3ee" opacity="0.85" />
+        <path d="M30 31 37 44 46 33Z" fill="#22d3ee" opacity="0.85" />
+        <circle cx="55" cy="24" r="3.6" fill="#0c4a6e" stroke="#e0f2fe" strokeWidth="1" />
+      </svg>
+    </div>
+  );
+}
+
+// On-screen footprint (px width) per enemy class. The Destroyer is a capital
+// ship — drawn at ~2× the others ("two squares").
+const ENEMY_SIZE: Record<SpaceshipThreatKind, number> = {
+  raider: 48,
+  destroyer: 92,
+  missile: 42,
+  stealth_ship: 54
+};
+
+// Detailed side-view enemy ships, all facing left toward the player's vessel.
+// Filled silhouettes with plating/cockpit/engine detail rather than flat glyphs.
+function EnemyShip({ kind, className = "" }: { kind: SpaceshipThreatKind; className?: string }) {
+  switch (kind) {
+    case "raider":
+      return (
+        <svg viewBox="0 0 100 64" className={className} aria-hidden="true">
+          <path d="M88 26 102 32 88 38Z" fill="#fde68a" opacity="0.9" />
+          <path d="M54 26 74 4 80 28Z" fill="#c2410c" />
+          <path d="M54 38 74 60 80 36Z" fill="#c2410c" />
+          <path d="M6 32 46 20 90 26 Q98 28 98 32 Q98 36 90 38 L46 44Z" fill="#fb923c" stroke="#7c2d12" strokeWidth="2" />
+          <path d="M48 30 86 29 86 35 48 34Z" fill="#9a3412" opacity="0.7" />
+          <path d="M28 28 46 26 46 38 28 36Z" fill="#0c4a6e" stroke="#bae6fd" strokeWidth="1" />
+        </svg>
+      );
+    case "destroyer":
+      return (
+        <svg viewBox="0 0 124 84" className={className} aria-hidden="true">
+          <path d="M106 30 122 36 106 42Z" fill="#fecaca" opacity="0.9" />
+          <path d="M106 44 122 50 106 56Z" fill="#fecaca" opacity="0.9" />
+          <path d="M78 26 92 4 100 28Z" fill="#7f1d1d" />
+          <path d="M78 58 92 80 100 56Z" fill="#7f1d1d" />
+          <path d="M8 42 34 24 100 22 Q114 26 114 42 Q114 58 100 62 L34 60Z" fill="#ef4444" stroke="#7f1d1d" strokeWidth="2.5" />
+          <path d="M40 30 98 28 M40 54 98 56" stroke="#991b1b" strokeWidth="2" fill="none" />
+          <path d="M8 42 26 33 26 51Z" fill="#b91c1c" />
+          <rect x="60" y="32" width="26" height="20" rx="3" fill="#991b1b" stroke="#fca5a5" strokeWidth="1" />
+          <g fill="#fca5a5">
+            <circle cx="50" cy="30" r="5" />
+            <rect x="32" y="28.5" width="20" height="3" rx="1.5" />
+            <circle cx="72" cy="56" r="5" />
+            <rect x="54" y="54.5" width="20" height="3" rx="1.5" />
+          </g>
+        </svg>
+      );
+    case "missile":
+      return (
+        <svg viewBox="0 0 100 44" className={className} aria-hidden="true">
+          <path d="M84 18 100 22 84 26Z" fill="#fde68a" opacity="0.9" />
+          <path d="M70 14 90 4 82 18Z" fill="#b45309" />
+          <path d="M70 30 90 40 82 26Z" fill="#b45309" />
+          <path d="M8 22 Q26 10 78 14 L84 18 84 26 78 30 Q26 34 8 22Z" fill="#fbbf24" stroke="#92400e" strokeWidth="2" />
+          <path d="M8 22 26 15 26 29Z" fill="#b45309" />
+          <path d="M40 14 42 30 M50 14 52 30" stroke="#92400e" strokeWidth="2" />
+        </svg>
+      );
+    case "stealth_ship":
+      return (
+        <svg viewBox="0 0 100 60" className={className} aria-hidden="true">
+          <path d="M88 26 102 30 88 34Z" fill="#c4b5fd" opacity="0.7" />
+          <path d="M6 30 66 10 94 24 94 36 66 50Z" fill="#8b5cf6" fillOpacity="0.85" stroke="#4c1d95" strokeWidth="2" />
+          <path d="M6 30 66 10 60 30Z" fill="#6d28d9" fillOpacity="0.7" />
+          <path d="M6 30 60 30 66 50Z" fill="#5b21b6" fillOpacity="0.7" />
+          <path d="M6 30 66 10 94 24" fill="none" stroke="#c4b5fd" strokeWidth="1" strokeDasharray="4 3" />
+          <path d="M40 27 56 25 56 31 40 32Z" fill="#1e1b4b" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+// A clickable enemy marker in the field: a detailed ship sprite, attack
+// countdown, and a tiny health bar. Imminent threats flash; "kill first" threats
+// get a warning pip.
+function ThreatBlip({
+  threat,
+  x,
+  y,
+  selected,
+  disabled,
+  onSelect,
+  reducedMotion,
+  scale = 1
+}: {
+  threat: SpaceshipThreat;
+  x: number;
+  y: number;
+  selected: boolean;
+  disabled: boolean;
+  onSelect: () => void;
+  reducedMotion: boolean;
+  scale?: number;
+}) {
+  const imminent = threat.attacksInTurns <= 1;
+  const killFirst = threat.oneShot && threat.kind !== "missile";
+  const hp = threat.maxHealth > 0 ? Math.max(0, (threat.health / threat.maxHealth) * 100) : 0;
+  const size = (ENEMY_SIZE[threat.kind] ?? 48) * scale;
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      aria-pressed={selected}
+      aria-label={`${threat.name}, hull ${Math.max(0, threat.health)} of ${threat.maxHealth}, attacks in ${threat.attacksInTurns}`}
+      title={`${threat.name} · T-${threat.attacksInTurns}`}
+      className={`absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center focus:outline-none disabled:cursor-default ${
+        reducedMotion ? "" : "transition-[left,top] duration-700 ease-out"
+      }`}
+      style={{ left: `${x}%`, top: `${y}%` }}
+    >
+      <span
+        className={`relative ${reducedMotion ? "" : "animate-float-slow"}`}
+        style={{ width: size, animationDelay: `${hash01(`${threat.id}:bob`) * 4}s` }}
+      >
+        <span
+          className={`block rounded-lg transition hover:brightness-125 ${selected ? "ring-2 ring-cyan-300" : ""} ${
+            imminent && !reducedMotion ? "animate-pulse" : ""
+          }`}
+          style={{ filter: imminent ? "drop-shadow(0 0 7px rgba(248,113,113,0.75))" : "drop-shadow(0 0 4px rgba(0,0,0,0.55))" }}
+        >
+          <EnemyShip kind={threat.kind} className="block w-full" />
+        </span>
+        <span
+          className={`absolute -right-1.5 -top-1.5 rounded-full px-1 text-[9px] font-bold leading-tight ${
+            imminent ? "bg-red-500 text-white" : "border border-slate-600 bg-slate-900 text-slate-200"
+          }`}
+        >
+          {threat.attackRevealed ? threat.attack : "?"}
+        </span>
+        {killFirst ? (
+          <span className="absolute -left-1.5 -top-1.5 text-amber-300">
+            <Icon name="warning" className="h-3.5 w-3.5" />
+          </span>
+        ) : null}
+      </span>
+      <span className="mt-1 h-1 overflow-hidden rounded-full bg-slate-800/90" style={{ width: size }}>
+        <span className="block h-full rounded-full bg-emerald-400" style={{ width: `${hp}%` }} />
+      </span>
+    </button>
+  );
+}
+
+// Ship anchor in the viewport's 0..100 coordinate space — matches the absolute
+// left-[13%] / vertical-centre placement of the ship sprite below, so beams and
+// reticle lines terminate on the hull.
+const SHIP_ANCHOR = { x: 13, y: 50 };
+
+interface PlacedThreat {
+  threat: SpaceshipThreat;
+  x: number;
+  y: number;
+}
+
+// Three approach zones, left (closest to the ship) to right (farthest). Enemies
+// enter at T-3 (far) and march inward to T-1 (impact) as their countdown ticks.
+// `center` is the X% a threat in that zone sits at; the band spans [start,end].
+const APPROACH_ZONES = [
+  { distance: 1, label: "T-1 Impact", start: 18, end: 45.3, center: 31.6, tint: "rgba(248,113,113,0.07)" },
+  { distance: 2, label: "T-2", start: 45.3, end: 72.6, center: 59.0, tint: "rgba(251,191,36,0.05)" },
+  { distance: 3, label: "T-3 Far", start: 72.6, end: 100, center: 86.3, tint: "rgba(56,189,248,0.05)" }
+] as const;
+
+// Deterministic battlefield layout shared by the live turn and the reveal so a
+// threat occupies the same spot in both. Horizontal position snaps to one of the
+// three approach zones by countdown (T-1 near the ship, T-3 far out), with a
+// small per-id jitter; vertically they're spread by slot with a stable wobble so
+// the swarm doesn't look like a rigid grid.
+function placeThreats(threats: SpaceshipThreat[]): PlacedThreat[] {
+  const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+  const count = threats.length;
+  return threats.map((threat, index) => {
+    const zone = clamp(threat.attacksInTurns, 1, 3);
+    const center = 31.6 + (zone - 1) * 27.3;
+    const x = clamp(center + (hash01(threat.id) - 0.5) * 16, 20, 98);
+    const slot = count > 1 ? index / (count - 1) : 0.5;
+    const y = clamp(9 + slot * 80 + (hash01(`${threat.id}:y`) - 0.5) * 16, 6, 94);
+    return { threat, x, y };
+  });
+}
+
+// A one-shot weapon beam to play across the field. `incoming` flips the palette
+// to enemy-red and aims the impact burst at the ship; `key` re-triggers the
+// animation each time it changes.
+interface ViewportFire {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  incoming?: boolean;
+  killed?: boolean;
+  key: number;
+}
+
+// Debris fragments hurled out by the explosion. Pre-computed directions (and a
+// per-piece spin) so the blast looks scattered but renders deterministically.
+const EXPLOSION_DEBRIS = Array.from({ length: 12 }, (_, i) => {
+  const angle = (i / 12) * Math.PI * 2 + (i % 2 ? 0.3 : 0);
+  const dist = 70 + (i % 4) * 28;
+  return {
+    id: i,
+    dx: Math.cos(angle) * dist,
+    dy: Math.sin(angle) * dist,
+    dr: (i % 2 ? 1 : -1) * (180 + i * 30),
+    size: 5 + (i % 3) * 3,
+    delay: 0.7 + (i % 3) * 0.04
+  };
+});
+
+// The end-of-game cinematic, drawn as an overlay that takes over the tactical
+// view: the camera pushes in (jump-zoom) and the ship either streaks into a
+// blooming wormhole (a win — escape is always a jump) or is torn apart in an
+// explosion (a loss). Honours reduced motion with a calm static frame.
+function JumpCinematic({ outcome, reducedMotion }: { outcome: "won" | "lost"; reducedMotion: boolean }) {
+  const won = outcome === "won";
+
+  if (reducedMotion) {
+    return (
+      <div className="absolute inset-0 z-30 flex items-center justify-center overflow-hidden rounded-xl bg-slate-950/95" aria-hidden="true">
+        {won ? (
+          <div className="relative h-32 w-32">
+            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(165,243,252,0.9),rgba(99,102,241,0.45)_55%,transparent_72%)]" />
+            <div className="absolute inset-3 rounded-full border-2 border-cyan-300/60" />
+          </div>
+        ) : (
+          <div className="relative h-32 w-32">
+            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(254,215,170,0.95),rgba(248,113,113,0.5)_50%,transparent_72%)]" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 z-30 overflow-hidden rounded-xl" aria-hidden="true">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.82),rgba(2,6,23,0.97))]" />
+      <div className="absolute inset-0 flex items-center justify-center animate-jump-zoom">
+        {won ? (
+          <div className="relative flex h-56 w-56 items-center justify-center">
+            {/* Warp streaks radiating from the portal core. */}
+            {Array.from({ length: 16 }, (_, i) => (
+              <span
+                key={i}
+                className="absolute left-1/2 top-1/2 h-px w-28 origin-left"
+                style={{ transform: `rotate(${i * (360 / 16)}deg)` }}
+              >
+                <span
+                  className="block h-full w-full origin-left bg-gradient-to-r from-cyan-100/90 via-cyan-300/40 to-transparent animate-warp-streak"
+                  style={{ animationDelay: `${(i % 5) * 0.12}s` }}
+                />
               </span>
-              <span className="text-slate-100">{entry.name}</span>
-              <span className="font-mono text-fuchsia-200/90">{imminent ? "next" : `${entry.arrivesInRounds} rds`}</span>
-            </span>
-          );
-        })}
+            ))}
+            {/* The wormhole portal: nested swirling rings + a bright core. */}
+            <div className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 animate-wormhole-form">
+              <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.18),rgba(99,102,241,0.55)_55%,transparent_74%)] animate-wormhole-spin" />
+              <div className="absolute inset-2 rounded-full border-2 border-cyan-300/60 animate-wormhole-spin" style={{ animationDirection: "reverse" } as CSSProperties} />
+              <div className="absolute inset-6 rounded-full border border-violet-300/50 animate-wormhole-spin" />
+              <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_30px_12px_rgba(165,243,252,0.85)]" />
+            </div>
+            {/* The ship streaking into the portal. */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-ship-warp" style={{ animationDelay: "0.5s" }}>
+              <ShipSprite shieldRatio={0.6} hullRatio={1} reducedMotion={false} scale={1.1} />
+            </div>
+          </div>
+        ) : (
+          <div className="relative flex h-56 w-56 items-center justify-center">
+            {/* Shockwave rings expanding from the blast. */}
+            <div className="absolute left-1/2 top-1/2 h-24 w-24 rounded-full border-2 border-orange-300/80 animate-shockwave" style={{ animationDelay: "0.68s" }} />
+            <div className="absolute left-1/2 top-1/2 h-24 w-24 rounded-full border border-amber-200/70 animate-shockwave" style={{ animationDelay: "0.86s" }} />
+            {/* Core blast flash. */}
+            <div
+              className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,237,213,0.95),rgba(249,115,22,0.6)_45%,transparent_72%)] animate-burst"
+              style={{ animationDelay: "0.68s" }}
+            />
+            {/* Debris fragments. */}
+            {EXPLOSION_DEBRIS.map((piece) => (
+              <span
+                key={piece.id}
+                className="absolute left-1/2 top-1/2 rounded-sm bg-orange-300 animate-debris-fly"
+                style={
+                  {
+                    width: piece.size,
+                    height: piece.size,
+                    animationDelay: `${piece.delay}s`,
+                    "--dx": `${piece.dx}px`,
+                    "--dy": `${piece.dy}px`,
+                    "--dr": `${piece.dr}deg`
+                  } as CSSProperties
+                }
+              />
+            ))}
+            {/* The doomed ship, shuddering then bursting apart. */}
+            <div className="animate-ship-explode">
+              <ShipSprite shieldRatio={0} hullRatio={0.25} reducedMotion={false} scale={1.1} />
+            </div>
+          </div>
+        )}
       </div>
+      {/* Climax flash, timed to when the ship vanishes / the blast peaks. */}
+      <div
+        className={`absolute inset-0 ${won ? "bg-cyan-100" : "bg-orange-200"} animate-cine-flash`}
+        style={{ animationDelay: won ? "2.0s" : "0.78s" }}
+      />
+    </div>
+  );
+}
+
+function TacticalViewport({
+  ship,
+  threats,
+  threatLevel,
+  roundIndex,
+  selectedThreatId,
+  onSelect,
+  disabled,
+  reducedMotion,
+  compact = false,
+  helmLabel,
+  fire,
+  cinematic
+}: {
+  ship: SpaceshipShipState;
+  threats: SpaceshipThreat[];
+  threatLevel: number;
+  roundIndex: number;
+  selectedThreatId: string | undefined;
+  onSelect: (threatId: string) => void;
+  disabled: boolean;
+  reducedMotion: boolean;
+  compact?: boolean;
+  helmLabel?: string;
+  fire?: ViewportFire | null;
+  /** When set, plays the end-of-game jump cinematic over the battlefield. */
+  cinematic?: "won" | "lost";
+}) {
+  const scale = compact ? 0.7 : 1;
+  const placed = placeThreats(threats);
+  const selected = placed.find((entry) => entry.threat.id === selectedThreatId);
+
+  const beamColor = fire ? (fire.incoming ? "rgba(248,113,113,0.95)" : fire.killed ? "rgba(251,146,60,0.95)" : "rgba(34,211,238,0.95)") : "";
+  const burstBg = fire
+    ? fire.incoming
+      ? "radial-gradient(circle, rgba(254,202,202,0.95), rgba(248,113,113,0.5) 45%, transparent 70%)"
+      : fire.killed
+        ? "radial-gradient(circle, rgba(254,215,170,0.95), rgba(251,146,60,0.6) 45%, transparent 70%)"
+        : "radial-gradient(circle, rgba(165,243,252,0.9), rgba(34,211,238,0.5) 45%, transparent 70%)"
+    : "";
+  const burstSize = (fire?.killed ? 46 : 28) * scale;
+
+  return (
+    <div className="relative h-72 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-950/60 sm:h-80 lg:h-96">
+      <Starfield />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        {ASTEROIDS.map((rock) => (
+          <span
+            key={rock.id}
+            className={`absolute ${reducedMotion ? "" : "animate-float-slow"}`}
+            style={{ left: `${rock.left}%`, top: `${rock.top}%`, animationDelay: `${rock.delay}s`, animationDuration: `${rock.duration}s` }}
+          >
+            <AsteroidShape
+              className={reducedMotion ? "" : "animate-asteroid-spin"}
+              style={{
+                width: rock.size,
+                height: rock.size,
+                color: rock.shade > 0.5 ? "rgba(100,116,139,0.35)" : "rgba(71,85,105,0.42)",
+                animationDuration: `${rock.spin}s`
+              }}
+            />
+          </span>
+        ))}
+      </div>
+
+      {/* Three approach zones: enemies enter far and march toward impact. */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        {APPROACH_ZONES.map((zone) => (
+          <div
+            key={zone.label}
+            className="absolute inset-y-0 border-l border-slate-500/20"
+            style={{ left: `${zone.start}%`, width: `${zone.end - zone.start}%`, background: zone.tint }}
+          />
+        ))}
+      </div>
+
+      {selected ? (
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line x1={SHIP_ANCHOR.x} y1={SHIP_ANCHOR.y} x2={selected.x} y2={selected.y} stroke="rgba(34,211,238,0.5)" strokeWidth="0.4" strokeDasharray="2 2" />
+        </svg>
+      ) : null}
+
+      {fire ? (
+        <svg
+          key={`beam-${fire.key}`}
+          className="animate-beam-flash pointer-events-none absolute inset-0 z-10 h-full w-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <line x1={fire.fromX} y1={fire.fromY} x2={fire.toX} y2={fire.toY} stroke={beamColor} strokeWidth="0.9" strokeLinecap="round" />
+        </svg>
+      ) : null}
+      {fire ? (
+        <span
+          key={`burst-${fire.key}`}
+          className="animate-burst pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ left: `${fire.toX}%`, top: `${fire.toY}%`, width: burstSize, height: burstSize, background: burstBg }}
+          aria-hidden="true"
+        />
+      ) : null}
+
+      <div className="absolute left-[13%] top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+        <ShipSprite
+          shieldRatio={ship.shieldCap > 0 ? ship.shields / ship.shieldCap : 0}
+          hullRatio={ship.maxHull > 0 ? ship.hull / ship.maxHull : 0}
+          reducedMotion={reducedMotion}
+          scale={scale}
+        />
+        {helmLabel ? (
+          <span className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-slate-950/75 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-cyan-200">
+            {helmLabel}
+          </span>
+        ) : null}
+      </div>
+
+      {placed.length ? (
+        placed.map((entry) => (
+          <ThreatBlip
+            key={entry.threat.id}
+            threat={entry.threat}
+            x={entry.x}
+            y={entry.y}
+            selected={selectedThreatId === entry.threat.id}
+            disabled={disabled}
+            onSelect={() => onSelect(entry.threat.id)}
+            reducedMotion={reducedMotion}
+            scale={scale}
+          />
+        ))
+      ) : (
+        <span className="absolute right-[24%] top-1/2 z-10 -translate-y-1/2 rounded bg-slate-950/70 px-2 py-1 text-xs text-slate-300">
+          Sector clear
+        </span>
+      )}
+
+      <span className="absolute left-2 top-2 z-20 rounded bg-slate-950/70 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-cyan-300">
+        Tactical view
+      </span>
+
+      <ThreatLevelMeter level={threatLevel} roundIndex={roundIndex} reducedMotion={reducedMotion} />
+
+      {cinematic ? <JumpCinematic outcome={cinematic} reducedMotion={reducedMotion} /> : null}
     </div>
   );
 }
@@ -497,8 +1101,34 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
   const [selectedThreatId, setSelectedThreatId] = useSelectedThreat(spaceship?.threats);
   const [confirmingEmergencyJump, setConfirmingEmergencyJump] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Transient ship→target beam shown the instant the player fires, before the
+  // server resolves the shot. Cleared after the beam animation finishes.
+  const [firing, setFiring] = useState<{ id: string; key: number } | null>(null);
+  // Gates the Mission Complete panel behind the jump cinematic: once the game
+  // finishes we let the wormhole/explosion play out on the tactical view first,
+  // then reveal the result.
+  const [cinematicDone, setCinematicDone] = useState(false);
   const rawSeconds = useCountdown(game.roundDeadlineAt);
+  const reducedMotion = usePrefersReducedMotion();
+  const isCompact = useIsCompact();
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  const outcome = spaceship?.outcome;
+  useEffect(() => {
+    if (!isFinished) {
+      setCinematicDone(false);
+      return undefined;
+    }
+    // Reduced motion skips straight to the result; otherwise hold for the
+    // cinematic (the win warp runs a touch longer than the loss blast).
+    if (reducedMotion) {
+      setCinematicDone(true);
+      return undefined;
+    }
+    const holdMs = outcome === "won" ? 2800 : 2400;
+    const timer = window.setTimeout(() => setCinematicDone(true), holdMs);
+    return () => window.clearTimeout(timer);
+  }, [isFinished, outcome, reducedMotion]);
 
   // Dismiss the emergency-jump confirmation whenever it stops being the viewer's
   // turn (e.g. the timer runs out or another player acts).
@@ -537,6 +1167,14 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
   const viewerIsActive = spaceship.activePlayerId === viewerPlayerId && game.state === "player_turn";
   const seconds = game.roundDeadlineAt && !isFinished ? rawSeconds : null;
   const selectedThreat = spaceship.threats.find((threat) => threat.id === selectedThreatId);
+  // Optimistic muzzle flash: aim a beam from the ship at the threat we just fired
+  // on, as long as it's still on the board this render.
+  const firingTarget = firing ? placeThreats(spaceship.threats).find((entry) => entry.threat.id === firing.id) : undefined;
+  const liveFire: ViewportFire | null =
+    firing && firingTarget
+      ? { fromX: SHIP_ANCHOR.x, fromY: SHIP_ANCHOR.y, toX: firingTarget.x, toY: firingTarget.y, key: firing.key }
+      : null;
+  const helmLabel = viewerIsActive ? "You at the helm" : `${activePlayerName} at the helm`;
   const canJump = ship.jumpCharge >= ship.jumpTarget;
   // The risky alternative when the drive isn't fully charged: gamble on how far
   // the jump drive has already charged. The jump itself is free.
@@ -555,11 +1193,18 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
   const incomingAbsorbed = Math.min(ship.shields, knownIncoming);
   const incomingToHull = Math.max(0, knownIncoming - incomingAbsorbed);
 
-  // Show the most imminent threats first, breaking ties by raw attack power.
-  const sortedThreats = [...spaceship.threats].sort((a, b) => {
-    if (a.attacksInTurns !== b.attacksInTurns) return a.attacksInTurns - b.attacksInTurns;
-    return b.attack - a.attack;
-  });
+  // Red-alert condition: the hull is about to take damage, integrity is critical,
+  // or a "kill first" one-shot threat (a destroyer-class burst, not a missile) is
+  // on the board. Drives the pulsing banner + danger vignette.
+  const hullRatio = ship.maxHull > 0 ? ship.hull / ship.maxHull : 1;
+  const hasKillFirst = spaceship.threats.some((threat) => threat.oneShot && threat.kind !== "missile");
+  const redAlert = !isFinished && (incomingToHull > 0 || hullRatio <= 0.3 || hasKillFirst);
+  const alertReason =
+    incomingToHull > 0
+      ? `${incomingToHull} damage inbound to the hull`
+      : hullRatio <= 0.3
+        ? "Hull integrity critical"
+        : "High-priority threat on the field";
 
   // Group the log into rounds (newest first) and only surface the last two.
   const recentRounds = [...new Set(spaceship.log.map((entry) => entry.roundIndex))]
@@ -572,6 +1217,10 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
 
   async function submit(action: SpaceshipActionType, targetThreatId?: string) {
     if (!viewerIsActive || submitting) return;
+    if (action === "shoot" && targetThreatId) {
+      setFiring({ id: targetThreatId, key: Date.now() });
+      window.setTimeout(() => setFiring(null), 650);
+    }
     setSubmitting(true);
     try {
       await onSubmitAction(action, targetThreatId);
@@ -615,6 +1264,14 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
   return (
     <GameShell active={viewerIsActive} className="relative overflow-hidden">
       <Starfield />
+      {redAlert ? (
+        <div
+          className={`pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_50%,transparent_42%,rgba(239,68,68,0.4))] ${
+            reducedMotion ? "opacity-40" : "animate-red-alert"
+          }`}
+          aria-hidden="true"
+        />
+      ) : null}
       <div className="relative z-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -630,6 +1287,19 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
           ROUND {game.roundIndex + 1}
         </span>
       </div>
+
+      {redAlert ? (
+        <div
+          className={`mt-4 flex items-center gap-2 rounded-lg border border-red-500/60 bg-red-950/40 px-4 py-2 text-sm text-red-100 ${
+            reducedMotion ? "" : "animate-pulse"
+          }`}
+          role="alert"
+        >
+          <Icon name="warning" className="h-4 w-4 shrink-0" />
+          <span className="font-bold tracking-[0.25em]">RED ALERT</span>
+          <span className="text-red-200/90">— {alertReason}</span>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ShipStat
@@ -676,9 +1346,29 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
         </div>
       ) : null}
 
+      {isFinished && cinematicDone ? null : (
+        <div className="mt-4">
+          <TacticalViewport
+            ship={ship}
+            threats={spaceship.threats}
+            threatLevel={spaceship.threatLevel}
+            roundIndex={game.roundIndex}
+            selectedThreatId={selectedThreatId}
+            onSelect={setSelectedThreatId}
+            disabled={isFinished}
+            reducedMotion={reducedMotion}
+            compact={isCompact}
+            helmLabel={helmLabel}
+            fire={liveFire}
+            cinematic={isFinished && !cinematicDone ? spaceship.outcome : undefined}
+          />
+        </div>
+      )}
+
       {isFinished ? (
+        cinematicDone ? (
         <div
-          className={`mt-4 rounded-xl border bg-slate-900/80 p-5 text-center ${
+          className={`animate-fade-up mt-4 rounded-xl border bg-slate-900/80 p-5 text-center ${
             spaceship.outcome === "won" ? "border-emerald-500/40 shadow-[0_0_50px_rgba(52,211,153,0.18)]" : "border-red-500/40 shadow-[0_0_50px_rgba(244,63,94,0.18)]"
           }`}
         >
@@ -717,6 +1407,21 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
             <HostRestartFooter isHost={isHost} onRestart={onRestart} label="Restart game" />
           </div>
         </div>
+        ) : (
+          <div
+            className={`mt-4 rounded-xl border p-4 text-center ${
+              spaceship.outcome === "won" ? "border-cyan-500/40 bg-cyan-950/30" : "border-orange-500/40 bg-orange-950/20"
+            }`}
+            role="status"
+          >
+            <p className={`text-xs uppercase tracking-[0.3em] ${spaceship.outcome === "won" ? "text-cyan-300" : "text-orange-300"}`}>
+              {spaceship.outcome === "won" ? "Engaging jump drive" : "Drive overload"}
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-slate-100">
+              {spaceship.outcome === "won" ? "Punching through to safety…" : "The ship is coming apart…"}
+            </h3>
+          </div>
+        )
       ) : (
         <div
           className={`mt-4 rounded-xl border p-4 ${
@@ -766,7 +1471,7 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
                 <Icon name="target" className="h-4 w-4" />
                 Shoot {selectedThreat ? selectedThreat.name : "Threat"}
               </span>
-              <span className="mt-0.5 block text-[11px] font-normal opacity-80">0–4 dmg · {ENERGY_COST.shoot}<EnergyMark /></span>
+              <span className="mt-0.5 block text-[11px] font-normal opacity-80">3 dmg · {ENERGY_COST.shoot}<EnergyMark /></span>
             </button>
             <button
               type="button"
@@ -844,35 +1549,8 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
         </div>
       )}
 
-      <div className="mt-4 grid gap-4 md:grid-cols-[1.4fr_1fr]">
-        <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-cyan-100">Threat Row</h3>
-            <span className="text-xs text-slate-400">Select a target, then shoot</span>
-          </div>
-          {spaceship.reinforcements?.length ? (
-            <div className="mt-3">
-              <IncomingReinforcements reinforcements={spaceship.reinforcements} />
-            </div>
-          ) : null}
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {sortedThreats.length ? (
-              sortedThreats.map((threat) => (
-                <ThreatCard
-                  key={threat.id}
-                  threat={threat}
-                  selected={selectedThreatId === threat.id}
-                  disabled={isFinished}
-                  onSelect={() => setSelectedThreatId(threat.id)}
-                />
-              ))
-            ) : (
-              <p className="rounded border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
-                No active threats. Use the opening to charge the jump drive.
-              </p>
-            )}
-          </div>
-        </section>
+      <div className="mt-4 space-y-4">
+        <SelectedThreatDetail threat={selectedThreat} />
 
         <section className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
           <h3 className="font-semibold text-cyan-100">Event Log</h3>
@@ -975,7 +1653,12 @@ function HitBreakdown({ hit }: { hit: SpaceshipHitDetail }) {
           </p>
           <p className="text-[10px] text-cyan-300/80">{hit.absorbed > 0 ? `−${hit.absorbed} absorbed` : "no buffer"}</p>
         </div>
-        <div className="rounded-lg bg-slate-950/50 px-2 py-2">
+        <div className="relative rounded-lg bg-slate-950/50 px-2 py-2">
+          {hit.toHull > 0 ? (
+            <span className="animate-damage-float pointer-events-none absolute left-1/2 top-0 text-lg font-extrabold text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.65)]">
+              −{hit.toHull}
+            </span>
+          ) : null}
           <p className="text-[10px] uppercase tracking-wider text-slate-400">Hull</p>
           <p className={`mt-0.5 text-sm font-semibold tabular-nums ${hit.toHull > 0 ? "text-red-300" : "text-emerald-300"}`}>
             {hit.hullBefore} <span className="text-slate-500">→</span> {hit.hullAfter}
@@ -1048,21 +1731,61 @@ function crewActionSummary(crew: SpaceshipCrewAction): { label: string; effect: 
   }
 }
 
+// Weapon-fire overlay for a "shoot" crew frame: a tracer beam streaks across the
+// card toward an impact burst on the right. A kill lands a bigger orange blast;
+// a hit a smaller amber one; a miss fizzles with no impact. The parent remounts
+// this frame per reveal step, so the one-shot animations replay automatically.
+function ShotFx({ crew }: { crew: SpaceshipCrewAction }) {
+  const killed = Boolean(crew.killedTarget);
+  const hit = killed || (crew.damageDealt ?? 0) > 0;
+  const beamColor = killed ? "rgba(251,146,60,0.9)" : hit ? "rgba(250,204,21,0.85)" : "rgba(148,163,184,0.6)";
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      {/* Centering lives on the wrappers; the animated transforms (scaleX / scale)
+          live on the inner elements so they don't clobber the vertical centering. */}
+      <div className="absolute left-0 top-1/2 h-[3px] w-full -translate-y-1/2">
+        <div
+          className="animate-tracer h-full w-full origin-left"
+          style={{ background: `linear-gradient(90deg, transparent, ${beamColor})` }}
+        />
+      </div>
+      {hit ? (
+        <div className="absolute top-1/2 -translate-y-1/2" style={{ right: "0.5rem" }}>
+          <div
+            className="animate-burst rounded-full"
+            style={{
+              width: killed ? "44px" : "26px",
+              height: killed ? "44px" : "26px",
+              background: killed
+                ? "radial-gradient(circle, rgba(254,215,170,0.95), rgba(251,146,60,0.6) 45%, transparent 70%)"
+                : "radial-gradient(circle, rgba(254,240,138,0.9), rgba(250,204,21,0.5) 45%, transparent 70%)",
+              animationDelay: "0.25s"
+            }}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 // The focal frame while a crew action plays in the reveal — mirrors HitBreakdown
 // for enemy fire.
 function CrewActionBreakdown({ crew }: { crew: SpaceshipCrewAction }) {
   const { label, effect, tone } = crewActionSummary(crew);
   const tag = crew.targetThreatKind ? THREAT_TAGS[crew.targetThreatKind] : undefined;
   return (
-    <div className="animate-pop-in rounded-xl border border-cyan-700/40 bg-slate-900/70 px-4 py-3" aria-live="polite">
-      <div className="flex items-center justify-center gap-2 text-sm">
-        {tag ? <span className="rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-slate-300">{tag}</span> : null}
-        <span className="font-semibold text-cyan-100">{crew.playerName}</span>
-        <span className={`font-semibold ${tone}`}>{label}</span>
-      </div>
-      <div className="mt-3 flex items-center justify-center gap-2 text-xs font-mono tabular-nums">
-        {effect ? <span className={`rounded bg-slate-950/50 px-2.5 py-1 ${tone}`}>{effect}</span> : null}
-        {crew.energySpent > 0 ? <span className="rounded bg-slate-950/50 px-2.5 py-1 text-amber-300/90">−{crew.energySpent}<EnergyMark /></span> : null}
+    <div className="animate-pop-in relative overflow-hidden rounded-xl border border-cyan-700/40 bg-slate-900/70 px-4 py-3" aria-live="polite">
+      {crew.action === "shoot" ? <ShotFx crew={crew} /> : null}
+      <div className="relative z-10">
+        <div className="flex items-center justify-center gap-2 text-sm">
+          {tag ? <span className="rounded bg-slate-950/70 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-slate-300">{tag}</span> : null}
+          <span className="font-semibold text-cyan-100">{crew.playerName}</span>
+          <span className={`font-semibold ${tone}`}>{label}</span>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-2 text-xs font-mono tabular-nums">
+          {effect ? <span className={`rounded bg-slate-950/50 px-2.5 py-1 ${tone}`}>{effect}</span> : null}
+          {crew.energySpent > 0 ? <span className="rounded bg-slate-950/50 px-2.5 py-1 text-amber-300/90">−{crew.energySpent}<EnergyMark /></span> : null}
+        </div>
       </div>
     </div>
   );
@@ -1091,9 +1814,10 @@ function CrewActionLine({ crew, highlight }: { crew: SpaceshipCrewAction; highli
 function EnemyRevealPhase({ room }: { room: Room }) {
   const game = room.game;
   const spaceship = game.spaceship!;
-  const steps = spaceship.revealSteps ?? [];
+  const steps = useMemo(() => spaceship.revealSteps ?? [], [spaceship.revealSteps]);
   const totalSteps = steps.length;
 
+  const reducedMotion = usePrefersReducedMotion();
   const clampedIndex = useStepPlayback(game.roundIndex, totalSteps, game.roundDeadlineAt);
   const currentStep = totalSteps > 0 ? steps[clampedIndex] : undefined;
 
@@ -1126,14 +1850,38 @@ function EnemyRevealPhase({ room }: { room: Room }) {
   const isFinalFrame = totalSteps === 0 || clampedIndex >= totalSteps - 1;
   const message = currentStep?.message ?? "";
 
-  const sortedThreats = useMemo(
-    () =>
-      [...threats].sort((a, b) => {
-        if (a.attacksInTurns !== b.attacksInTurns) return a.attacksInTurns - b.attacksInTurns;
-        return b.attack - a.attack;
-      }),
-    [threats]
-  );
+  const isCompact = useIsCompact();
+
+  // Replay the shot/incoming fire on the battlefield: locate the relevant ship by
+  // id in this frame (or the frame before it, for a target that was just
+  // destroyed/spent and is gone from the current snapshot) and aim a beam.
+  const revealFire: ViewportFire | null = useMemo(() => {
+    const locate = (id: string) => {
+      const inFrame = placeThreats(threats).find((entry) => entry.threat.id === id);
+      if (inFrame) return inFrame;
+      const prev = clampedIndex > 0 ? steps[clampedIndex - 1]?.threats : undefined;
+      return prev ? placeThreats(prev).find((entry) => entry.threat.id === id) : undefined;
+    };
+    if (currentCrew?.action === "shoot" && currentCrew.targetThreatId) {
+      const pos = locate(currentCrew.targetThreatId);
+      if (!pos) return null;
+      return { fromX: SHIP_ANCHOR.x, fromY: SHIP_ANCHOR.y, toX: pos.x, toY: pos.y, killed: Boolean(currentCrew.killedTarget), key: clampedIndex };
+    }
+    if (currentHit) {
+      const pos = locate(currentHit.threatId);
+      if (!pos) return null;
+      return { fromX: pos.x, fromY: pos.y, toX: SHIP_ANCHOR.x, toY: SHIP_ANCHOR.y, incoming: true, key: clampedIndex };
+    }
+    return null;
+  }, [threats, steps, clampedIndex, currentCrew, currentHit]);
+
+  // A hull-damaging enemy frame kicks off a screen shake + red flash, scaled by
+  // how hard the hit landed. Re-keyed by frame so each blow re-triggers.
+  const hullHit = currentHit && currentHit.toHull > 0 ? currentHit.toHull : 0;
+  const shaking = !reducedMotion && hullHit > 0;
+  const shakeStyle: CSSProperties | undefined = shaking
+    ? ({ "--shake": `${Math.min(11, 3 + hullHit * 2)}px` } as CSSProperties)
+    : undefined;
 
   const eyebrow = inCrewPhase ? "Crew phase" : "Enemy phase";
   const title = inCrewPhase ? "Crew takes action" : "Incoming fire — brace the hull";
@@ -1151,7 +1899,14 @@ function EnemyRevealPhase({ room }: { room: Room }) {
   return (
     <div className={`relative overflow-hidden rounded-xl border bg-slate-950/75 p-4 transition-shadow duration-500 lg:col-span-2 ${phaseTheme}`}>
       <Starfield />
-      <div className="relative z-10">
+      {shaking ? (
+        <div key={`flash-${clampedIndex}`} className="animate-flash-danger pointer-events-none absolute inset-0 z-0 bg-red-600/30" aria-hidden="true" />
+      ) : null}
+      <div
+        key={shaking ? `shake-${clampedIndex}` : "steady"}
+        className={`relative z-10 ${shaking ? "animate-stage-shake" : ""}`}
+        style={shakeStyle}
+      >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className={`text-xs uppercase tracking-[0.25em] ${inCrewPhase ? "text-cyan-300" : "text-red-300"}`}>{eyebrow}</p>
@@ -1175,6 +1930,24 @@ function EnemyRevealPhase({ room }: { room: Room }) {
         <ShipStat label="Jump" value={ship.jumpCharge} max={ship.jumpTarget} tone="bg-accent-success" icon="jump" iconClass="text-emerald-300" />
         <ShipStat label="Energy" value={ship.energy} max={ship.energyCap} tone="bg-amber-300" icon="energy" iconClass="text-amber-300" />
       </div>
+
+      {/* Battlefield stays pinned directly under the stats so the per-beat log
+          below it can change height without shoving the tactical view around. */}
+      <section className="mt-4 space-y-3">
+        <TacticalViewport
+          ship={ship}
+          threats={threats}
+          threatLevel={spaceship.threatLevel}
+          roundIndex={game.roundIndex}
+          selectedThreatId={undefined}
+          onSelect={() => {}}
+          disabled
+          reducedMotion={reducedMotion}
+          compact={isCompact}
+          helmLabel={inCrewPhase && currentCrew ? `${currentCrew.playerName} at the helm` : undefined}
+          fire={revealFire}
+        />
+      </section>
 
       <div key={`srev-${game.roundIndex}-${clampedIndex}`} className="mt-4">
         {currentCrew ? (
@@ -1224,32 +1997,6 @@ function EnemyRevealPhase({ room }: { room: Room }) {
           </div>
         </div>
       ) : null}
-
-      <section className="mt-4 rounded-xl border border-slate-700 bg-slate-900/70 p-4">
-        <h3 className="font-semibold text-cyan-100">Threat Row</h3>
-        {spaceship.reinforcements?.length ? (
-          <div className="mt-3">
-            <IncomingReinforcements reinforcements={spaceship.reinforcements} />
-          </div>
-        ) : null}
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {sortedThreats.length ? (
-            sortedThreats.map((threat) => (
-              <ThreatCard
-                key={threat.id}
-                threat={threat}
-                selected={false}
-                disabled
-                onSelect={() => {}}
-              />
-            ))
-          ) : (
-            <p className="rounded border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-300">
-              The threat row is clear — for now.
-            </p>
-          )}
-        </div>
-      </section>
       </div>
     </div>
   );

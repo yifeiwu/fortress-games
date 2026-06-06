@@ -1,8 +1,8 @@
 import type { GameDefinition, GameRoundResult } from "@/lib/game/contracts";
 import { createRoundSeed, mulberry32, stringToSeed } from "@/lib/game/rng";
-import type { GameState, Player, Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipGameState, SpaceshipHitDetail, SpaceshipReinforcement, SpaceshipRevealStep, SpaceshipShipState, SpaceshipThreat, SpaceshipThreatKind } from "@/lib/types";
+import type { GameState, Player, Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipGameState, SpaceshipHitDetail, SpaceshipRevealStep, SpaceshipShipState, SpaceshipThreat, SpaceshipThreatKind } from "@/lib/types";
 
-const TURN_DURATION_MS = 40_000;
+const TURN_DURATION_MS = 30_000;
 // The round reveal plays crew actions then enemy fire one frame at a time; the
 // window scales with how many frames there are so playback isn't rushed.
 const REVEAL_BASE_MS = 1_800;
@@ -16,9 +16,15 @@ function revealDurationMs(stepCount: number): number {
 // Keep enough history that the UI can always render the last two full rounds,
 // even with a large crew and a doubled threat row.
 const MAX_LOG_ENTRIES = 60;
+// This is an endless survival/escape game: the only outcomes are jumping away
+// (win) or losing the hull (loss), with reinforcements arriving indefinitely.
+// There's no fixed round limit, so we use the codebase's "endless" sentinel
+// (matching liars-dice/frankenbeasts) rather than a misleading hard cap.
+const MAX_ROUNDS = 999;
 const STARTING_HULL = 10;
 const SHIELD_CAP = 6;
-const MAX_ATTACK_COUNTDOWN = 5;
+// Fixed damage a single `shoot` action deals (no longer a random roll).
+const SHOT_DAMAGE = 3;
 // Shared crew energy. The reserve regenerates by ENERGY_PER_TURN at the start of
 // every player's turn, and most actions spend energy — so "passing" (or timing
 // out) is what banks that regen for later.
@@ -63,8 +69,8 @@ const THREAT_LIBRARY: Record<SpaceshipThreatKind, Omit<SpaceshipThreat, "id" | "
   destroyer: {
     kind: "destroyer",
     name: "Destroyer",
-    health: 4,
-    maxHealth: 4,
+    health: 8,
+    maxHealth: 8,
     attack: 2,
     attackRevealed: true,
     attackInterval: 3,
@@ -139,73 +145,114 @@ function rollInt(state: GameState, salt: string, min: number, max: number): numb
   return min + Math.floor(rand() * (max - min + 1));
 }
 
-// The battle always opens with this fixed set of threats on the field.
-const INITIAL_THREAT_KINDS: SpaceshipThreatKind[] = ["missile", "missile", "raider"];
-// Reinforcement waves are drawn from this pool.
-const REINFORCEMENT_KINDS: SpaceshipThreatKind[] = ["raider", "destroyer", "missile", "stealth_ship"];
-// A fresh reinforcement wave jumps in on this cadence (rounds), each carrying a
-// random number of enemies in [REINFORCEMENT_MIN_SIZE, REINFORCEMENT_MAX_SIZE].
-const REINFORCEMENT_INTERVAL_ROUNDS = 3;
-const REINFORCEMENT_MIN_SIZE = 3;
-const REINFORCEMENT_MAX_SIZE = 5;
-
-function createThreats(state: GameState, kinds: SpaceshipThreatKind[]): SpaceshipThreat[] {
-  return kinds.map((kind, index) => {
-    const template = THREAT_LIBRARY[kind];
-    return {
-      ...template,
-      id: `threat-${index + 1}`,
-      attacksInTurns: rollInt(state, `threat-${index + 1}:countdown`, 1, MAX_ATTACK_COUNTDOWN)
-    };
-  });
+// Preferred way to roll inside an action handler: returns the value AND the
+// spaceship with its RNG cursor already advanced. Bundling the bump with the
+// draw makes it impossible to forget — a forgotten increment would silently
+// correlate repeated identical actions (same player + same target) on the same
+// salt. (Batch setup like createThreats/createReinforcementWave bumps the cursor
+// once per wave instead, since each entry already carries a distinct salt.)
+function drawInt(
+  state: GameState,
+  spaceship: SpaceshipGameState,
+  salt: string,
+  min: number,
+  max: number
+): { value: number; spaceship: SpaceshipGameState } {
+  return {
+    value: rollInt(state, salt, min, max),
+    spaceship: { ...spaceship, rngCursor: spaceship.rngCursor + 1 }
+  };
 }
 
-// Roll a single reinforcement wave: a random 3-5 enemies drawn from the pool
-// that jump in after REINFORCEMENT_INTERVAL_ROUNDS. Composition comes from the
-// seeded RNG (with a per-wave salt) so the encounter replays deterministically.
-function createReinforcementWave(state: GameState, waveLabel: string): SpaceshipReinforcement[] {
-  const size = rollInt(state, `${waveLabel}:size`, REINFORCEMENT_MIN_SIZE, REINFORCEMENT_MAX_SIZE);
-  return Array.from({ length: size }, (_unused, index) => {
-    const kind = REINFORCEMENT_KINDS[rollInt(state, `${waveLabel}:kind:${index}`, 0, REINFORCEMENT_KINDS.length - 1)];
-    return {
-      id: `reinf-${waveLabel}-${index + 1}`,
-      kind,
-      name: THREAT_LIBRARY[kind].name,
-      arrivesInRounds: REINFORCEMENT_INTERVAL_ROUNDS,
-      attackCountdown: rollInt(state, `${waveLabel}:countdown:${index}`, 1, MAX_ATTACK_COUNTDOWN)
-    };
-  });
+// Enemies arrive as a continuous per-round stream rather than batched waves.
+// New contacts always enter at the far edge (T-3) and march inward as their
+// attack countdown ticks each enemy phase, passing through three approach zones
+// (T-3 -> T-2 -> T-1) before they fire.
+const SPAWN_DISTANCE = 3;
+// The random portion of a round's spawn is drawn from this pool (no destroyer —
+// destroyers arrive on their own cadence below).
+const STREAM_KINDS: SpaceshipThreatKind[] = ["raider", "missile", "stealth_ship"];
+// The random stream scales directly with crew size so per-player pressure stays
+// roughly constant: an n-player crew faces between n-2 and n contacts per round
+// (before the difficulty ramp adds more). Energy regen and the number of actions
+// per round both scale linearly with crew size, so the spawn count does too —
+// smaller crews face fewer contacts, larger crews more.
+
+/**
+ * Upper bound for a round's random spawn count: n for an n-player crew. Pure
+ * (and exported) so the rebalance is testable and seeded replays stay
+ * deterministic for a given crew. Floored at 1 so even a solo crew sees contacts.
+ */
+export function spawnStreamMax(playerCount: number): number {
+  return Math.max(1, playerCount);
 }
 
-// Tick every queued reinforcement down a round; any that reach 0 jump into the
-// threat row with their pre-rolled attack countdown. Whenever a wave lands we
-// queue a fresh random wave so reinforcements keep arriving on the same cadence.
-// Called as a new round opens.
-function spawnDueReinforcements(state: GameState, spaceship: SpaceshipGameState, now: number, roundIndex: number): SpaceshipGameState {
-  const pending = spaceship.reinforcements ?? [];
-  if (!pending.length) return spaceship;
+/**
+ * Lower bound for a round's random spawn count: n - 2 for an n-player crew, so
+ * larger crews never coast through near-empty rounds. Pure (and exported) for
+ * testability and deterministic seeded replays; floored at 1 (every round brings
+ * at least one contact) and always stays <= spawnStreamMax.
+ */
+export function spawnStreamMin(playerCount: number): number {
+  return Math.max(1, playerCount - 2);
+}
+// A guaranteed Destroyer joins every Nth round (excluding the initial round 0).
+const DESTROYER_EVERY = 3;
+// Threat level rises one tier every this many rounds. It's the single source of
+// truth for the difficulty ramp (each tier adds another contact to the stream)
+// and feeds the HUD's escalation meter.
+const ROUNDS_PER_THREAT_TIER = 3;
 
-  const ticked = pending.map((entry) => ({ ...entry, arrivesInRounds: entry.arrivesInRounds - 1 }));
-  const due = ticked.filter((entry) => entry.arrivesInRounds <= 0);
-  const remaining = ticked.filter((entry) => entry.arrivesInRounds > 0);
-  if (!due.length) {
-    return { ...spaceship, reinforcements: remaining };
+/**
+ * The escalation tier for a given round — a pure function so the HUD meter and
+ * the spawn intensity can't drift, and seeded replays stay deterministic. Tier 1
+ * is the opening; it climbs one tier every ROUNDS_PER_THREAT_TIER rounds.
+ */
+export function threatLevelForRound(roundIndex: number): number {
+  return Math.floor(Math.max(0, roundIndex) / ROUNDS_PER_THREAT_TIER) + 1;
+}
+
+// Roll the kinds that spawn at the start of a given round. The random count comes
+// from the seeded RNG (salted per round) so the encounter replays deterministically.
+// The random range scales with crew size (see spawnStreamMax).
+function rollSpawnKinds(state: GameState, roundIndex: number, playerCount: number): SpaceshipThreatKind[] {
+  let count = rollInt(state, `spawn-r${roundIndex}:count`, spawnStreamMin(playerCount), spawnStreamMax(playerCount));
+  // Difficulty ramp: each threat tier above the first adds another contact.
+  count += threatLevelForRound(roundIndex) - 1;
+  // Never open the battle empty.
+  if (roundIndex === 0) count = Math.max(1, count);
+
+  const kinds: SpaceshipThreatKind[] = [];
+  // Heavy on cadence (every 3rd round), excluding the initial round 0.
+  if (roundIndex >= DESTROYER_EVERY && roundIndex % DESTROYER_EVERY === 0) {
+    kinds.push("destroyer");
   }
+  for (let index = 0; index < count; index += 1) {
+    kinds.push(STREAM_KINDS[rollInt(state, `spawn-r${roundIndex}:kind:${index}`, 0, STREAM_KINDS.length - 1)]);
+  }
+  return kinds;
+}
 
-  const newThreats: SpaceshipThreat[] = due.map((entry) => ({
-    ...THREAT_LIBRARY[entry.kind],
-    id: entry.id,
-    attacksInTurns: entry.attackCountdown
+// Spawn this round's stream onto the field at T-3. Bumps the RNG cursor once for
+// the whole batch (each entry already carries a distinct salt), mirroring the old
+// per-wave bump so replays stay deterministic. Called as a new round opens.
+function spawnRoundThreats(state: GameState, spaceship: SpaceshipGameState, now: number, roundIndex: number, playerCount: number): SpaceshipGameState {
+  const kinds = rollSpawnKinds(state, roundIndex, playerCount);
+  if (!kinds.length) {
+    return { ...spaceship, rngCursor: spaceship.rngCursor + 1 };
+  }
+  const newThreats: SpaceshipThreat[] = kinds.map((kind, index) => ({
+    ...THREAT_LIBRARY[kind],
+    id: `threat-r${roundIndex}-${index + 1}`,
+    attacksInTurns: SPAWN_DISTANCE
   }));
-  const nextWave = createReinforcementWave(state, `wave-r${roundIndex}`);
   return appendLog(
     {
       ...spaceship,
       threats: [...spaceship.threats, ...newThreats],
-      reinforcements: [...remaining, ...nextWave],
       rngCursor: spaceship.rngCursor + 1
     },
-    `Reinforcements jump in: ${due.map((entry) => entry.name).join(", ")}.`,
+    `New contacts on approach: ${newThreats.map((threat) => threat.name).join(", ")}.`,
     now,
     roundIndex
   );
@@ -213,6 +260,25 @@ function spawnDueReinforcements(state: GameState, spaceship: SpaceshipGameState,
 
 function createStartedState(room: Room, state: GameState, now: number): GameState {
   const seed = createRoundSeed();
+  const baseSpaceship: SpaceshipGameState = {
+    ship: {
+      hull: STARTING_HULL,
+      maxHull: STARTING_HULL,
+      shields: 0,
+      shieldCap: SHIELD_CAP,
+      jumpCharge: 0,
+      jumpTarget: room.players.length + 6,
+      energy: STARTING_ENERGY,
+      energyCap: ENERGY_CAP
+    },
+    threats: [],
+    threatLevel: threatLevelForRound(0),
+    activePlayerId: firstPlayerId(room),
+    playersActedThisRound: [],
+    rngCursor: 0,
+    crewSteps: [],
+    log: []
+  };
   const seededState: GameState = {
     ...state,
     rngByRound: {
@@ -223,49 +289,23 @@ function createStartedState(room: Room, state: GameState, now: number): GameStat
         rngAlgo: "mulberry32"
       }
     },
-    spaceship: {
-      ship: {
-        hull: STARTING_HULL,
-        maxHull: STARTING_HULL,
-        shields: 0,
-        shieldCap: SHIELD_CAP,
-        jumpCharge: 0,
-        jumpTarget: room.players.length + 6,
-        energy: STARTING_ENERGY,
-        energyCap: ENERGY_CAP
-      },
-      threats: [],
-      activePlayerId: firstPlayerId(room),
-      playersActedThisRound: [],
-      rngCursor: 0,
-      crewSteps: [],
-      reinforcements: [],
-      log: []
-    }
+    spaceship: baseSpaceship
   };
 
-  const spaceship: SpaceshipGameState = {
-    ...seededState.spaceship!,
-    threats: createThreats(seededState, INITIAL_THREAT_KINDS),
-    // The first reinforcement wave is queued at the start; further waves are
-    // rolled as each one lands (see spawnDueReinforcements).
-    reinforcements: createReinforcementWave(seededState, "wave-start"),
-    rngCursor: 1,
-    log: [
-      {
-        id: `log-${now}-start`,
-        message: "Enemy contacts detected. More are inbound — charge the jump drive and hold the hull.",
-        createdAt: now,
-        roundIndex: 0
-      }
-    ]
-  };
+  // The opening contacts are this round's stream (round 0, floored to >=1); every
+  // subsequent round spawns a fresh stream as it opens (see finishEnemyPhase).
+  const spaceship: SpaceshipGameState = appendLog(
+    spawnRoundThreats(seededState, baseSpaceship, now, 0, room.players.length),
+    "Enemy contacts detected. More are inbound — charge the jump drive and hold the hull.",
+    now,
+    0
+  );
 
   return {
     ...seededState,
     state: "player_turn",
     roundIndex: 0,
-    maxRounds: 7,
+    maxRounds: MAX_ROUNDS,
     roundDeadlineAt: now + TURN_DURATION_MS,
     spaceship: grantTurnEnergy(spaceship),
     version: state.version + 1
@@ -305,7 +345,10 @@ function spendEnergy(spaceship: SpaceshipGameState, amount: number): SpaceshipGa
   };
 }
 
-// Headline for a crew-action playback frame.
+// Single source of truth for a crew action's description: feeds both the round
+// log and the enemy-phase reveal frame (see appendCrewStep) so they can't drift.
+// Only the non-terminal crew actions reach here — the jump actions end the game
+// and write their own (odds-aware) messages directly.
 function crewStepMessage(crew: Omit<SpaceshipCrewAction, "id">): string {
   const target = crew.targetThreatName ?? "a threat";
   switch (crew.action) {
@@ -318,8 +361,6 @@ function crewStepMessage(crew: Omit<SpaceshipCrewAction, "id">): string {
       return `${crew.playerName} charged shields to full.`;
     case "charge_jump":
       return `${crew.playerName} charged the jump drive.`;
-    case "emergency_jump":
-      return `${crew.playerName}'s emergency jump failed — the reserve is spent.`;
     case "pass":
       return crew.timedOut ? `${crew.playerName} timed out.` : `${crew.playerName} passed and banked energy.`;
     default:
@@ -484,100 +525,24 @@ function applyPlayerAction(room: Room, state: GameState, action: SpaceshipAction
   if (cost > 0 && spaceship.ship.energy < cost) {
     return state;
   }
-  let nextSpaceship = spaceship;
-  // Effect summary for the enemy-phase reveal recap; filled in per action.
-  const crewAction: Omit<SpaceshipCrewAction, "id"> = {
-    playerId: actorPlayerId,
-    playerName: actorName,
-    action,
-    timedOut: false,
-    energySpent: cost
-  };
 
-  if (action === "pass") {
-    nextSpaceship = appendLog(nextSpaceship, `${actorName} holds position, banking energy.`, now, state.roundIndex);
-  } else if (action === "shoot") {
-    if (!targetThreatId) return state;
-    const threat = spaceship.threats.find((entry) => entry.id === targetThreatId);
-    if (!threat) return state;
-    const damage = rollInt(state, `${actorPlayerId}:shoot:${targetThreatId}`, 0, 4);
-    const killed = threat.health - damage <= 0;
-    const nextThreats = nextSpaceship.threats
-      .map((entry) => {
-        if (entry.id !== targetThreatId) return entry;
-        return {
-          ...entry,
-          health: entry.health - damage,
-          attackRevealed: true
-        };
-      })
-      .filter((entry) => entry.health > 0);
-    crewAction.targetThreatName = threat.name;
-    crewAction.targetThreatKind = threat.kind;
-    crewAction.damageDealt = damage;
-    crewAction.killedTarget = killed;
-    nextSpaceship = appendLog(
-      {
-        ...nextSpaceship,
-        rngCursor: nextSpaceship.rngCursor + 1,
-        threats: nextThreats
-      },
-      damage > 0 ? `${actorName} hits ${threat.name} for ${damage}.` : `${actorName} fires at ${threat.name} and misses.`,
-      now,
-      state.roundIndex
-    );
-  } else if (action === "shield") {
-    const shieldsBefore = nextSpaceship.ship.shields;
-    // Costly, but charges shields all the way to the cap.
-    const shieldsAfter = nextSpaceship.ship.shieldCap;
-    crewAction.shieldsGained = shieldsAfter - shieldsBefore;
-    nextSpaceship = appendLog(
-      {
-        ...nextSpaceship,
-        ship: {
-          ...nextSpaceship.ship,
-          shields: shieldsAfter
-        }
-      },
-      `${actorName} charges shields to full.`,
-      now,
-      state.roundIndex
-    );
-  } else if (action === "charge_jump") {
-    const jumpBefore = nextSpaceship.ship.jumpCharge;
-    const jumpAfter = Math.min(nextSpaceship.ship.jumpTarget, jumpBefore + 1);
-    crewAction.jumpGained = jumpAfter - jumpBefore;
-    nextSpaceship = appendLog(
-      {
-        ...nextSpaceship,
-        ship: {
-          ...nextSpaceship.ship,
-          jumpCharge: jumpAfter
-        }
-      },
-      `${actorName} charges the jump drive.`,
-      now,
-      state.roundIndex
-    );
-  } else if (action === "jump_away") {
-    if (nextSpaceship.ship.jumpCharge < nextSpaceship.ship.jumpTarget) return state;
-    return finishState(state, appendLog(nextSpaceship, `${actorName} engages the jump drive. The crew escapes!`, now, state.roundIndex), "won");
-  } else if (action === "emergency_jump") {
+  // The two jump actions end the game outright, so they resolve up front: they
+  // never record a crew step (there's no round left to recap) and write their
+  // own odds-aware messages.
+  if (action === "jump_away") {
+    if (spaceship.ship.jumpCharge < spaceship.ship.jumpTarget) return state;
+    return finishState(state, appendLog(spaceship, `${actorName} engages the jump drive. The crew escapes!`, now, state.roundIndex), "won");
+  }
+  if (action === "emergency_jump") {
     // Only a fallback when the safe jump isn't available. Jumping itself is free —
     // the gamble is on how charged the drive already is, not on the reserve.
-    if (nextSpaceship.ship.jumpCharge >= nextSpaceship.ship.jumpTarget) return state;
-    const chance = emergencyJumpChance(nextSpaceship.ship);
-    const roll = rollInt(state, `${actorPlayerId}:emergency_jump`, 1, 100);
-    const success = roll <= chance;
-    // Burns only the rng draw — the jump costs no energy.
-    nextSpaceship = {
-      ...nextSpaceship,
-      rngCursor: nextSpaceship.rngCursor + 1
-    };
-    if (success) {
+    if (spaceship.ship.jumpCharge >= spaceship.ship.jumpTarget) return state;
+    const chance = emergencyJumpChance(spaceship.ship);
+    const { value: roll, spaceship: bumped } = drawInt(state, spaceship, `${actorPlayerId}:emergency_jump`, 1, 100);
+    if (roll <= chance) {
       return finishState(
         state,
-        appendLog(nextSpaceship, `${actorName} forces an emergency jump (${chance}% odds) — it works! The crew escapes!`, now, state.roundIndex),
+        appendLog(bumped, `${actorName} forces an emergency jump (${chance}% odds) — it works! The crew escapes!`, now, state.roundIndex),
         "won"
       );
     }
@@ -585,7 +550,7 @@ function applyPlayerAction(room: Room, state: GameState, action: SpaceshipAction
     return finishState(
       state,
       appendLog(
-        nextSpaceship,
+        bumped,
         `${actorName} attempts an emergency jump (${chance}% odds) — it fails, the drive overloads and the ship is torn apart.`,
         now,
         state.roundIndex
@@ -594,6 +559,51 @@ function applyPlayerAction(room: Room, state: GameState, action: SpaceshipAction
     );
   }
 
+  // Effect summary for the enemy-phase reveal recap; filled in per action.
+  const crewAction: Omit<SpaceshipCrewAction, "id"> = {
+    playerId: actorPlayerId,
+    playerName: actorName,
+    action,
+    timedOut: false,
+    energySpent: cost
+  };
+  let nextSpaceship = spaceship;
+
+  if (action === "shoot") {
+    if (!targetThreatId) return state;
+    const threat = spaceship.threats.find((entry) => entry.id === targetThreatId);
+    if (!threat) return state;
+    const damage = SHOT_DAMAGE;
+    const killed = threat.health - damage <= 0;
+    const nextThreats = nextSpaceship.threats
+      .map((entry) => (entry.id === targetThreatId ? { ...entry, health: entry.health - damage, attackRevealed: true } : entry))
+      .filter((entry) => entry.health > 0);
+    crewAction.targetThreatId = threat.id;
+    crewAction.targetThreatName = threat.name;
+    crewAction.targetThreatKind = threat.kind;
+    crewAction.damageDealt = damage;
+    crewAction.killedTarget = killed;
+    nextSpaceship = { ...nextSpaceship, threats: nextThreats };
+  } else if (action === "shield") {
+    const shieldsBefore = nextSpaceship.ship.shields;
+    // Costly, but charges shields straight to the cap — it's a flat-priced top-up,
+    // not a per-point trickle, so re-shielding before they're depleted wastes the
+    // unused headroom.
+    const shieldsAfter = nextSpaceship.ship.shieldCap;
+    crewAction.shieldsGained = shieldsAfter - shieldsBefore;
+    nextSpaceship = { ...nextSpaceship, ship: { ...nextSpaceship.ship, shields: shieldsAfter } };
+  } else if (action === "charge_jump") {
+    const jumpBefore = nextSpaceship.ship.jumpCharge;
+    const jumpAfter = Math.min(nextSpaceship.ship.jumpTarget, jumpBefore + 1);
+    crewAction.jumpGained = jumpAfter - jumpBefore;
+    nextSpaceship = { ...nextSpaceship, ship: { ...nextSpaceship.ship, jumpCharge: jumpAfter } };
+  }
+  // `pass` needs no state change beyond banking the turn's regen (the shared tail
+  // below skips the energy spend, since passing costs nothing).
+
+  // One message for both the round log and the reveal frame (appendCrewStep
+  // derives the frame text from the same helper), so they stay in lockstep.
+  nextSpaceship = appendLog(nextSpaceship, crewStepMessage(crewAction), now, state.roundIndex);
   nextSpaceship = spendEnergy(nextSpaceship, cost);
   nextSpaceship = appendCrewStep(nextSpaceship, state.roundIndex, crewAction);
   return advanceTurn(room, { ...state, spaceship: nextSpaceship }, nextSpaceship, actorPlayerId, now);
@@ -616,17 +626,19 @@ function finishEnemyPhase(room: Room, state: GameState, now: number): GameState 
     roundIndex: state.roundIndex + 1,
     roundDeadlineAt: now + TURN_DURATION_MS,
     spaceship: grantTurnEnergy(
-      spawnDueReinforcements(
+      spawnRoundThreats(
         state,
         {
           ...spaceship,
+          threatLevel: threatLevelForRound(state.roundIndex + 1),
           revealSteps: undefined,
           crewSteps: [],
           playersActedThisRound: [],
           activePlayerId: firstPlayerId(room)
         },
         now,
-        state.roundIndex + 1
+        state.roundIndex + 1,
+        room.players.length
       )
     ),
     version: state.version + 1
@@ -659,7 +671,7 @@ export const spaceshipDefenseGameDefinition: GameDefinition = {
       gameType: "spaceship_defense",
       state: "waiting",
       roundIndex: 0,
-      maxRounds: 7,
+      maxRounds: MAX_ROUNDS,
       scores: createEmptyScores(args.players),
       choicesByRound: {},
       rngByRound: {},

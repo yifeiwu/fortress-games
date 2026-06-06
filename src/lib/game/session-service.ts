@@ -82,10 +82,6 @@ class GameSessionService {
   }
 
   private async ensureSessionHydrated(sessionId: string) {
-    if (!this.store.hydrateSession) {
-      await this.ensureHydrated();
-      return;
-    }
     // Honour the store's short freshness window instead of forcing a DB read on
     // every request. Writes stay correct because a stale optimistic version
     // triggers a conflict, and the store force-rehydrates before each retry.
@@ -97,10 +93,6 @@ class GameSessionService {
 
   private async ensureRoomHydrated(code: string) {
     const roomCode = this.normalizeRoomCode(code);
-    if (!this.store.hydrateRoom) {
-      await this.ensureHydrated();
-      return roomCode;
-    }
     await this.store.hydrateRoom(roomCode, false);
     if (this.reaper.sweepRoom(roomCode)) {
       await this.persistStore();
@@ -110,10 +102,6 @@ class GameSessionService {
 
   private async ensureRoomAndSessionHydrated(code: string, sessionId: string) {
     const roomCode = this.normalizeRoomCode(code);
-    if (!this.store.hydrateRoom || !this.store.hydrateSession) {
-      await this.ensureHydrated();
-      return roomCode;
-    }
     await Promise.all([this.store.hydrateRoom(roomCode, false), this.store.hydrateSession(sessionId, false)]);
     const roomChanged = this.reaper.sweepRoom(roomCode);
     const sessionChanged = this.reaper.sweepSession(sessionId, roomCode);
@@ -193,24 +181,13 @@ class GameSessionService {
   }
 
   async listRooms() {
-    // Prefer the lightweight summary read so the lobby doesn't full-hydrate the
+    // Use the lightweight summary read so the lobby doesn't full-hydrate the
     // entire fleet into the in-memory singleton (and grow its persist scan).
-    if (this.store.listRoomSummaries) {
-      const summaries = await this.store.listRoomSummaries();
-      const now = Date.now();
-      return summaries
-        .filter((room) => room.status !== "ended" && now - room.lastActivityAt <= ROOM_INACTIVITY_TTL_MS)
-        .map(({ code, gameType, status, playerCount }) => ({ code, gameType, status, playerCount }));
-    }
-    await this.ensureHydrated();
-    return [...this.store.rooms.values()]
-      .filter((room) => room.status !== "ended")
-      .map((room) => ({
-        code: room.code,
-        gameType: room.gameType,
-        status: room.status,
-        playerCount: room.players.length
-      }));
+    const summaries = await this.store.listRoomSummaries();
+    const now = Date.now();
+    return summaries
+      .filter((room) => room.status !== "ended" && now - room.lastActivityAt <= ROOM_INACTIVITY_TTL_MS)
+      .map(({ code, gameType, status, playerCount }) => ({ code, gameType, status, playerCount }));
   }
 
   async createRoomForSession(sessionId: string, gameType: string) {

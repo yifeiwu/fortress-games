@@ -17,14 +17,14 @@ export interface GameStore {
   /** Heartbeat ledger per room, stored separately from the room payload. */
   presence: Map<string, RoomPresence>;
   hydrate(force?: boolean): Promise<void>;
-  hydrateRoom?(code: string, force?: boolean): Promise<void>;
-  hydrateSession?(id: string, force?: boolean): Promise<void>;
+  hydrateRoom(code: string, force?: boolean): Promise<void>;
+  hydrateSession(id: string, force?: boolean): Promise<void>;
   /**
    * Lightweight lobby listing that does NOT load rooms into the in-memory cache
    * (so the warm singleton doesn't accumulate the whole fleet, and a later
    * persist doesn't re-serialize rooms we only listed).
    */
-  listRoomSummaries?(): Promise<RoomSummary[]>;
+  listRoomSummaries(): Promise<RoomSummary[]>;
   persist(): Promise<void>;
   deleteRoom(code: string): void;
   deleteSession(id: string): void;

@@ -265,7 +265,7 @@ const MUSCLE_BODY: FBPart = {
       id: "flex",
       name: "Flex",
       description: "Heal 3 HP and gain +4 attack for 3 turns.",
-      effects: [{ kind: "heal", amount: 3 }, { kind: "damage_buff", bonus: 4, turns: 3 }]
+      effects: [{ kind: "damage_buff", bonus: 4, turns: 3 }, { kind: "heal", amount: 3 }]
     }
   ],
   passives: []

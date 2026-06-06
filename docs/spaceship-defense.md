@@ -42,7 +42,7 @@ member has acted, the **enemy phase** resolves and a new round begins.
 
 | Action | Energy | Effect |
 | --- | --- | --- |
-| **Shoot** | 1 | Deal **0–4 random damage** to a chosen threat. Also reveals that threat's attack value if it was hidden. |
+| **Shoot** | 1 | Deal **1–3 random damage** to a chosen threat. Also reveals that threat's attack value if it was hidden. |
 | **Full Shields** | 3 | Charge shields **straight to the cap (6)** — expensive, but a complete refill in one turn. |
 | **Charge Jump** | 2 | Add **+1** to the jump drive. |
 | **Jump Away** | free | Only available when the drive is fully charged — escapes and **wins** the game for everyone (guaranteed). |
@@ -57,8 +57,9 @@ disabled until the reserve recovers.
 
 ### Enemy phase
 
-After the crew has acted, every threat's attack countdown ticks down by 1. When a
-threat's countdown hits 0:
+After the crew has acted, every threat's attack countdown ticks down by 1 — each
+contact advances one approach zone closer (T-3 → T-2 → T-1). When a threat's
+countdown hits 0:
 
 1. It attacks. **Shields absorb the damage first**; any overflow hits the hull.
 2. Its countdown resets to its attack interval (one-shot threats vanish instead).
@@ -74,23 +75,46 @@ the next round opens.
 | Threat | Health | Attack | Fires every | Notes |
 | --- | --- | --- | --- | --- |
 | **Raider** | 2 | 1 | 2 turns | The basic nuisance. |
-| **Destroyer** | 4 | 2 | 3 turns | Tanky and hits hard. |
+| **Destroyer** | 8 | 2 | 3 turns | Tanky and hits hard. |
 | **Missile** | 1 | 3 | 1 turn | One-shot: fires once for big damage, then disappears. Kill it first. |
 | **Stealth Ship** | 3 | 2 | 2 turns | Its attack value is **hidden** until you shoot it (or it fires). |
 
-### Reinforcements
+### Enemy stream & approach zones
 
-The battle always opens with the same **fixed force**: **2 Missiles and 1
-Raider**. After that, fresh **reinforcement waves keep arriving every 3 rounds**,
-and they are telegraphed in advance:
+Enemies arrive as a **continuous stream** rather than batched waves. **Every
+round — including the opening round — new contacts warp in at long range (T-3)**
+and march inward as their countdowns tick, passing through three approach zones
+shown in the tactical view:
 
-- Each wave is a **random 3–5 enemies** drawn from the full threat pool.
-- The next wave is listed under **Incoming reinforcements** with an ETA
-  (`next` round, or `N rds` away). Use the warning to pre-shield or clear space.
-- Waves drop in at the **start of a round**. The moment one wave lands, the next
-  one is queued — so reinforcements never stop coming until you escape.
-- A reinforcement's composition and attack countdown are **rolled from the
-  seed**, so the same seed always produces the same arrivals and timers.
+- **T-3 / Far** → **T-2** → **T-1 / Impact** (about to fire).
+
+Each round's spawn is:
+
+- A random spawn of contacts drawn from Raider / Missile / Stealth Ship (the
+  opening round is floored to at least one). The size of this random spawn
+  **scales with crew size** so per-player pressure stays roughly constant: a
+  4-player crew sees the baseline **0–3 contacts**, smaller crews fewer, and
+  larger crews proportionally more (since each extra player adds energy and an
+  action every round).
+- A guaranteed **Destroyer every 3rd round** (rounds 3, 6, 9, …; never on the
+  initial round), on top of the random contacts.
+- A **Threat Level** that scales the random spawn: each tier above the first
+  adds **+1 contact** to that round's stream (see below).
+
+### Threat Level
+
+A **Threat Level meter** in the HUD shows how hard the sector is escalating. It
+starts at tier 1 (**Skirmish**) and climbs one tier **every 3 rounds**
+(**Elevated → Severe → Critical → Overrun**), shading from green to red as it
+rises. The meter is the single source of truth for the difficulty ramp: each
+tier above the first adds **+1 contact** to the round's random spawn, so the
+longer the crew stays, the heavier every wave gets. The bar fills across the
+current tier and pulses red once you hit **Overrun** — the field is about to be
+overrun, so charge and jump before it does. (Threat Level is a pure function of
+the round, so the same seed always escalates identically.)
+
+Spawn counts and composition are **rolled from the seed**, so the same seed
+always produces the same arrivals.
 
 Threat attack timers and weapon damage use **seeded randomness**, so the same
 seed always produces the same encounter.
@@ -114,9 +138,9 @@ seed always produces the same encounter.
 - **Manage the shared energy.** Every action draws from one crew-wide reserve
   that only refills +1 per turn. If a quiet moment comes up, have a teammate
   **Pass** to bank energy so the crew can act freely when the threat row heats up.
-- **Watch the incoming wave.** Reinforcements are telegraphed before they land —
-  bank energy and stack shields the round before a wave drops, and try to clear
-  the current row so you're not fighting old and new threats at once.
+- **Watch the approach zones.** New contacts enter at T-3 and take a few rounds to
+  reach impact — pick off threats while they're still far out, and pre-shield the
+  round before a cluster (or a Destroyer) reaches T-1.
 - **Gamble the emergency jump as a true last resort.** If the hull is about to fail,
   the odds scale with how charged the drive already is — a nearly-charged drive
   makes the emergency jump a near sure thing, but a barely-charged drive is a long

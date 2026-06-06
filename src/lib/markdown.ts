@@ -13,12 +13,26 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Only allow links whose scheme is safe to render. Rejects `javascript:`,
+ * `data:`, and other script-bearing schemes; permits http(s), mailto, and
+ * relative/anchor links. The href is already HTML-escaped by the time this
+ * runs, so we just gate the scheme.
+ */
+function isSafeHref(href: string): boolean {
+  const trimmed = href.trim();
+  if (/^(https?:|mailto:)/i.test(trimmed)) return true;
+  // Relative paths, root-relative links, and in-page anchors carry no scheme.
+  return /^[/#.]/.test(trimmed) || !/^[a-z][a-z0-9+.-]*:/i.test(trimmed);
+}
+
 function renderInline(text: string): string {
   let out = escapeHtml(text);
   out = out.replace(/`([^`]+)`/g, (_match, code: string) => `<code>${code}</code>`);
   out = out.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    (_match, label: string, href: string) => `<a href="${href}">${label}</a>`
+    (_match, label: string, href: string) =>
+      isSafeHref(href) ? `<a href="${href}">${label}</a>` : label
   );
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
