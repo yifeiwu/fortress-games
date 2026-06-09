@@ -4,6 +4,14 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { playerName as resolvePlayerName } from "@/lib/game/players";
 import { useCountdown, useNumberChange, useStepPlayback } from "@/app/room/[code]/games/shared";
 import { GameShell, HostRestartFooter } from "@/app/room/[code]/games/shared-ui";
+import {
+  ACTION_ENERGY_COST,
+  ENERGY_PER_TURN,
+  ROUNDS_PER_THREAT_TIER,
+  TURN_DURATION_MS,
+  emergencyJumpChanceFromCharge,
+  threatLevelForRound
+} from "@/lib/game/plugins/spaceship-defense-game";
 import type { Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipHitDetail, SpaceshipShipState, SpaceshipThreat, SpaceshipThreatKind } from "@/lib/types";
 
 interface SpaceshipDefenseGameProps {
@@ -14,26 +22,8 @@ interface SpaceshipDefenseGameProps {
   onRestart: () => void;
 }
 
-// Visual scale for the turn timer bar. Mirrors TURN_DURATION_MS in the plugin.
-const TURN_SECONDS = 30;
-
-// Mirrors ACTION_ENERGY_COST / ENERGY_PER_TURN in the spaceship-defense plugin.
-const ENERGY_COST: Record<SpaceshipActionType, number> = {
-  shoot: 1,
-  shield: 3,
-  charge_jump: 2,
-  jump_away: 0,
-  emergency_jump: 0,
-  pass: 0
-};
-const ENERGY_PER_TURN = 1;
-
-// Mirrors ROUNDS_PER_THREAT_TIER / threatLevelForRound in the plugin: the
-// escalation tier climbs one step every few rounds and drives the spawn ramp.
-const ROUNDS_PER_THREAT_TIER = 3;
-function threatLevelForRound(roundIndex: number): number {
-  return Math.floor(Math.max(0, roundIndex) / ROUNDS_PER_THREAT_TIER) + 1;
-}
+// Visual scale for the turn timer bar.
+const TURN_SECONDS = TURN_DURATION_MS / 1000;
 
 // Named bands for the threat meter (index = tier - 1; the last entry covers all
 // higher tiers). Each carries the label and a colour that climbs green→red so
@@ -58,12 +48,6 @@ const ACTION_BUTTON =
 // The escape buttons (Jump Away / Emergency Jump) keep their own risk-coded
 // colours since those convey safety-critical meaning.
 const ACTION_BUTTON_BG = "linear-gradient(160deg,#38bdf8,#0ea5e9)";
-
-// Mirrors emergencyJumpChance in the spaceship-defense plugin.
-function emergencyJumpChance(jumpCharge: number, jumpTarget: number): number {
-  if (jumpTarget <= 0) return 100;
-  return Math.max(0, Math.min(100, Math.round((jumpCharge / jumpTarget) * 100)));
-}
 
 const THREAT_TONES: Record<string, string> = {
   raider: "border-orange-500/40 bg-orange-500/10",
@@ -1178,7 +1162,7 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
   const canJump = ship.jumpCharge >= ship.jumpTarget;
   // The risky alternative when the drive isn't fully charged: gamble on how far
   // the jump drive has already charged. The jump itself is free.
-  const emergencyChance = emergencyJumpChance(ship.jumpCharge, ship.jumpTarget);
+  const emergencyChance = emergencyJumpChanceFromCharge(ship.jumpCharge, ship.jumpTarget);
   const canEmergencyJump = viewerIsActive && !isFinished && !canJump;
   const chanceTone = emergencyChance >= 70 ? "text-emerald-300" : emergencyChance >= 40 ? "text-amber-300" : "text-red-300";
 
@@ -1233,7 +1217,7 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
   function actionState(action: SpaceshipActionType): { disabled: boolean; reason?: string } {
     if (!viewerIsActive) return { disabled: true, reason: "Wait for your turn" };
     if (submitting) return { disabled: true, reason: "Submitting your action…" };
-    const cost = ENERGY_COST[action] ?? 0;
+    const cost = ACTION_ENERGY_COST[action] ?? 0;
     if (cost > ship.energy) {
       return { disabled: true, reason: `Not enough energy (needs ${cost}, have ${ship.energy})` };
     }
@@ -1471,7 +1455,7 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
                 <Icon name="target" className="h-4 w-4" />
                 Shoot {selectedThreat ? selectedThreat.name : "Threat"}
               </span>
-              <span className="mt-0.5 block text-[11px] font-normal opacity-80">3 dmg · {ENERGY_COST.shoot}<EnergyMark /></span>
+              <span className="mt-0.5 block text-[11px] font-normal opacity-80">3 dmg · {ACTION_ENERGY_COST.shoot}<EnergyMark /></span>
             </button>
             <button
               type="button"
@@ -1484,7 +1468,7 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
                 <Icon name="shields" className="h-4 w-4" />
                 Full Shields
               </span>
-              <span className="mt-0.5 block text-[11px] font-normal opacity-80">to {ship.shieldCap} · {ENERGY_COST.shield}<EnergyMark /></span>
+              <span className="mt-0.5 block text-[11px] font-normal opacity-80">to {ship.shieldCap} · {ACTION_ENERGY_COST.shield}<EnergyMark /></span>
             </button>
             <button
               type="button"
@@ -1497,7 +1481,7 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
                 <Icon name="charge" className="h-4 w-4" />
                 Charge Jump
               </span>
-              <span className="mt-0.5 block text-[11px] font-normal opacity-80">{ENERGY_COST.charge_jump}<EnergyMark /></span>
+              <span className="mt-0.5 block text-[11px] font-normal opacity-80">{ACTION_ENERGY_COST.charge_jump}<EnergyMark /></span>
             </button>
             {canJump ? (
               <button

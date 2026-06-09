@@ -2,8 +2,14 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MAX_ROOM_PLAYERS, FRANKENBEASTS_PLAYER_COUNT } from "@/lib/constants";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import {
+  GAME_ACCENT_BORDERS_BY_TYPE,
+  GAME_DISPLAY_NAMES_BY_TYPE,
+  listGameCatalog,
+  type GameTag,
+  type GameTagVariant
+} from "@/lib/game/catalog";
+import { attachBroadcastRefresh } from "@/lib/supabase/broadcast-refresh";
 import { Button } from "@/components/Button";
 
 interface LobbyRoomSummary {
@@ -13,106 +19,16 @@ interface LobbyRoomSummary {
   playerCount: number;
 }
 
-type GameTagVariant = "default" | "strict" | "info";
-
-interface GameTag {
-  label: string;
-  /** Highlight the tag when it's a strict, unusual constraint. */
-  variant?: GameTagVariant;
-}
-
-interface GameMeta {
-  gameType: string;
-  name: string;
-  tagline: string;
-  description: string;
-  /** Tags shown in the card header, each rendered on its own row. */
-  tags: GameTag[];
-  buttonClass: string;
-  /** Thumbnail shown at the top of the card. */
-  image: string;
-  /** Accent color used for the card's top border / glow. */
-  accentClass: string;
-  /** Emoji shown behind the thumbnail when the artwork is missing. */
-  fallbackIcon?: string;
-}
-
 const GAME_TAG_VARIANT_CLASSES: Record<GameTagVariant, string> = {
   default: "bg-slate-800 text-slate-300",
   strict: "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40",
   info: "bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-500/30"
 };
 
-const GAMES: GameMeta[] = [
-  {
-    gameType: "arrow_predict",
-    name: "Acchi Muite Hoi",
-    tagline: "Look-away duel of nerve & misdirection",
-    description:
-      "A rotating leader points a direction each round while everyone else tries to dodge. Dodgers score for looking away; the leader cashes an escalating jackpot for catching the crowd. Everyone leads once.",
-    tags: [{ label: `2–${MAX_ROOM_PLAYERS} players` }],
-    buttonClass: "bg-accent text-slate-950 hover:opacity-90",
-    image: "/games/card-arrow-predict.svg",
-    accentClass: "border-t-sky-400/70"
-  },
-  {
-    gameType: "spaceship_defense",
-    name: "Starshield Crisis",
-    tagline: "Co-op bridge-crew survival",
-    description:
-      "Share one ship and survive together. Shoot threats, raise shields, and charge the jump drive — then escape before incoming fire breaks through. Win or lose as a crew.",
-    tags: [{ label: `2–${MAX_ROOM_PLAYERS} players` }, { label: "co-op", variant: "info" }],
-    buttonClass: "bg-cyan-400 text-slate-950 hover:opacity-90",
-    image: "/games/card-spaceship-defense.svg",
-    accentClass: "border-t-cyan-400/70"
-  },
-  {
-    gameType: "frankenbeasts",
-    name: "FrankenBeasts",
-    tagline: "1v1 monster-building duel",
-    description:
-      "Build a beast from a head, body, and tail, then fight to the death in simultaneous-turn combat. Mix damage, poison, armor, and chaos — the right combo beats fast reflexes. Add a bot to spar solo.",
-    tags: [{ label: `${FRANKENBEASTS_PLAYER_COUNT} players` }, { label: "spectators allowed", variant: "info" }],
-    buttonClass: "bg-emerald-400 text-slate-950 hover:opacity-90",
-    image: "/games/card-frankenbeasts.svg",
-    accentClass: "border-t-emerald-400/70"
-  },
-  {
-    gameType: "tarot",
-    name: "Fortune's Veil",
-    tagline: "Solo tarot reading",
-    description:
-      "Sit with the Reader, name yourself, and ask a single question. The deck answers with a Past, Present, and Future card — flipped one at a time, each with its own meaning — then laid out as your full reading. Your question always draws the same fate.",
-    tags: [{ label: "1 player", variant: "info" }],
-    buttonClass: "bg-fuchsia-400 text-slate-950 hover:opacity-90",
-    image: "/games/card-tarot.svg",
-    accentClass: "border-t-fuchsia-400/70"
-  },
-  {
-    gameType: "liars_dice",
-    name: "Bluffer's Hoard",
-    tagline: "Bluff & call dice duel",
-    description:
-      "Everyone hides a cup of dice and the table escalates a public claim — \"four 5s!\" — about how many of a face are showing across all cups. Raise the bid or call Liar! to expose a bluff. Lose the showdown and a die slides off your stack; last bluffer standing wins.",
-    tags: [{ label: `2–${MAX_ROOM_PLAYERS} players` }, { label: "bluffing", variant: "info" }],
-    buttonClass: "bg-amber-400 text-slate-950 hover:opacity-90",
-    image: "/games/card-liars-dice.svg",
-    accentClass: "border-t-amber-400/70",
-    fallbackIcon: "🎲"
-  }
-];
+const GAMES = listGameCatalog();
 
-const GAME_DISPLAY_NAMES: Record<string, string> = Object.fromEntries(
-  GAMES.map((game) => [game.gameType, game.name])
-);
-
-const GAME_ACCENT_BORDERS: Record<string, string> = {
-  arrow_predict: "border-l-sky-400/70",
-  spaceship_defense: "border-l-cyan-400/70",
-  frankenbeasts: "border-l-emerald-400/70",
-  tarot: "border-l-fuchsia-400/70",
-  liars_dice: "border-l-amber-400/70"
-};
+const GAME_DISPLAY_NAMES = GAME_DISPLAY_NAMES_BY_TYPE;
+const GAME_ACCENT_BORDERS = GAME_ACCENT_BORDERS_BY_TYPE;
 
 function LobbySkeleton() {
   return (
@@ -179,41 +95,7 @@ export default function LobbyPage() {
 
   useEffect(() => {
     Promise.allSettled([refreshSession(), refreshRooms()]).finally(() => setLoaded(true));
-    const supabase = getSupabaseBrowserClient();
-    let fallbackPoll: number | undefined;
-    let debounce: number | undefined;
-    let realtimeReady = false;
-    const startFallbackPoll = () => {
-      fallbackPoll ??= window.setInterval(refreshRooms, 30_000);
-    };
-    const scheduleRefresh = () => {
-      if (debounce) window.clearTimeout(debounce);
-      debounce = window.setTimeout(refreshRooms, 150);
-    };
-    const channel = supabase
-      ?.channel("lobby")
-      .on("broadcast", { event: "*" }, scheduleRefresh)
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          realtimeReady = true;
-          if (fallbackPoll) window.clearInterval(fallbackPoll);
-          fallbackPoll = undefined;
-        }
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          startFallbackPoll();
-        }
-      });
-    const realtimeGuard = window.setTimeout(() => {
-      if (!supabase || !realtimeReady) {
-        startFallbackPoll();
-      }
-    }, 3_000);
-    return () => {
-      window.clearTimeout(realtimeGuard);
-      if (debounce) window.clearTimeout(debounce);
-      if (fallbackPoll) window.clearInterval(fallbackPoll);
-      channel?.unsubscribe();
-    };
+    return attachBroadcastRefresh({ channelName: "lobby", refresh: refreshRooms });
   }, []);
 
   async function handleSetUsername(e: FormEvent) {
@@ -396,15 +278,15 @@ export default function LobbyPage() {
               {GAMES.map((game) => (
                 <div
                   key={game.gameType}
-                  className={`flex flex-col overflow-hidden rounded-lg border border-t-2 border-slate-700 bg-slate-900/60 transition hover:border-slate-600 ${game.accentClass}`}
+                  className={`flex flex-col overflow-hidden rounded-lg border border-t-2 border-slate-700 bg-slate-900/60 transition hover:border-slate-600 ${game.lobbyCard.accentClass}`}
                 >
                   <div className="relative aspect-[2/1] w-full overflow-hidden bg-slate-950">
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-5xl">
-                      {game.fallbackIcon ?? "🎮"}
+                      {game.lobbyCard.fallbackIcon ?? "🎮"}
                     </div>
                     <img
-                      src={game.image}
-                      alt={`${game.name} artwork`}
+                      src={game.lobbyCard.image}
+                      alt={`${game.displayName} artwork`}
                       loading="lazy"
                       width={400}
                       height={200}
@@ -417,9 +299,9 @@ export default function LobbyPage() {
                   </div>
                   <div className="flex flex-1 flex-col p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-bold text-slate-100">{game.name}</h3>
+                    <h3 className="text-lg font-bold text-slate-100">{game.displayName}</h3>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      {game.tags.map((tag) => (
+                      {game.lobbyCard.tags.map((tag: GameTag) => (
                         <span
                           key={tag.label}
                           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -431,19 +313,19 @@ export default function LobbyPage() {
                       ))}
                     </div>
                   </div>
-                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{game.tagline}</p>
-                  <p className="mt-2 flex-1 text-sm text-slate-300">{game.description}</p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{game.lobbyCard.tagline}</p>
+                  <p className="mt-2 flex-1 text-sm text-slate-300">{game.lobbyCard.description}</p>
                   <div className="mt-4 flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => createRoom(game.gameType)}
                       disabled={isBusy}
-                      className={`rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-60 ${game.buttonClass}`}
+                      className={`rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:cursor-not-allowed disabled:opacity-60 ${game.lobbyCard.buttonClass}`}
                     >
                       {creatingGameType === game.gameType ? "Creating…" : "Create Room"}
                     </button>
                     <a
-                      href={`/rules/${game.gameType}`}
+                      href={game.rulesHref}
                       target="_blank"
                       rel="noreferrer"
                       className="rounded text-xs font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

@@ -3,7 +3,7 @@
 import type { KeyboardEvent } from "react";
 import dynamic from "next/dynamic";
 import { ARROW_KEY_TO_DIRECTION } from "@/app/room/[code]/games/arrow-predict-game";
-import { FRANKENBEASTS_PLAYER_COUNT } from "@/lib/constants";
+import { requireGameCatalogEntry, type GameLobbyConfig } from "@/lib/game/catalog";
 import type { Direction, GameState, Room, SpaceshipActionType } from "@/lib/types";
 
 // Each game's UI is a large, self-contained bundle (and FrankenBeasts/Tarot drag
@@ -22,6 +22,12 @@ const SpaceshipDefenseGame = dynamic(() =>
   import("@/app/room/[code]/games/spaceship-defense-game").then((m) => m.SpaceshipDefenseGame)
 );
 const TarotGame = dynamic(() => import("@/app/room/[code]/games/tarot-game").then((m) => m.TarotGame));
+
+const arrowCatalog = requireGameCatalogEntry("arrow_predict");
+const spaceshipCatalog = requireGameCatalogEntry("spaceship_defense");
+const frankenbeastsCatalog = requireGameCatalogEntry("frankenbeasts");
+const liarsDiceCatalog = requireGameCatalogEntry("liars_dice");
+const tarotCatalog = requireGameCatalogEntry("tarot");
 
 type ClientGameAction =
   | { action: "submit_direction"; direction: Direction }
@@ -51,26 +57,6 @@ interface GameRendererProps {
   onRestart: () => void;
 }
 
-/**
- * Lobby presentation for games that don't seat every room member. Keeps the
- * waiting room game-agnostic: it renders active/spectator badges and the note
- * from this config instead of branching on specific game types.
- */
-interface LobbyConfig {
-  /**
-   * Caps active participants. The first players (by join order) up to this
-   * count play; everyone else is shown as a spectator. Omit when every member
-   * plays.
-   */
-  maxActivePlayers: number;
-  /** Badge label for active participants (e.g. "Fighter"). */
-  activeRoleLabel: string;
-  /** Badge label for spectators (e.g. "Spectator"). */
-  spectatorRoleLabel: string;
-  /** Waiting-room note shown when more members are present than there are seats. */
-  overflowNote: string;
-}
-
 export interface ClientGameDefinition {
   gameType: string;
   displayName: string;
@@ -79,7 +65,7 @@ export interface ClientGameDefinition {
   /** Solo experience: hides chat and the invite (copy code/link) UI. */
   solo?: boolean;
   /** Lobby seating rules for games where not every member actively plays. */
-  lobby?: LobbyConfig;
+  lobby?: GameLobbyConfig;
   /** In-app link to the game's rules doc, rendered at /rules/<gameType>. */
   rulesHref: string;
   shouldScheduleDeadlineRefresh: (state: GameState) => boolean;
@@ -94,10 +80,10 @@ export interface ClientGameDefinition {
 const clientGameDefinitions: Record<string, ClientGameDefinition> = {
   arrow_predict: {
     gameType: "arrow_predict",
-    displayName: "Acchi Muite Hoi",
-    usesGameBackdrop: true,
-    supportsBots: true,
-    rulesHref: "/rules/arrow_predict",
+    displayName: arrowCatalog.displayName,
+    usesGameBackdrop: arrowCatalog.usesGameBackdrop,
+    supportsBots: arrowCatalog.supportsBots,
+    rulesHref: arrowCatalog.rulesHref,
     shouldScheduleDeadlineRefresh: (state) => state.state === "intro" || state.state === "round_open" || state.state === "round_revealed",
     handleKeyDown({ event, room, onGameAction }) {
       if (room.game.state !== "round_open") return;
@@ -120,10 +106,10 @@ const clientGameDefinitions: Record<string, ClientGameDefinition> = {
   },
   spaceship_defense: {
     gameType: "spaceship_defense",
-    displayName: "Starshield Crisis",
-    usesGameBackdrop: true,
-    supportsBots: true,
-    rulesHref: "/rules/spaceship_defense",
+    displayName: spaceshipCatalog.displayName,
+    usesGameBackdrop: spaceshipCatalog.usesGameBackdrop,
+    supportsBots: spaceshipCatalog.supportsBots,
+    rulesHref: spaceshipCatalog.rulesHref,
     shouldScheduleDeadlineRefresh: (state) => state.state === "player_turn" || state.state === "enemy_phase",
     render({ room, viewerPlayerId, isHost, onGameAction, onRestart }) {
       return (
@@ -141,16 +127,11 @@ const clientGameDefinitions: Record<string, ClientGameDefinition> = {
   },
   frankenbeasts: {
     gameType: "frankenbeasts",
-    displayName: "FrankenBeasts",
-    usesGameBackdrop: true,
-    supportsBots: true,
-    rulesHref: "/rules/frankenbeasts",
-    lobby: {
-      maxActivePlayers: FRANKENBEASTS_PLAYER_COUNT,
-      activeRoleLabel: "Fighter",
-      spectatorRoleLabel: "Spectator",
-      overflowNote: `The first ${FRANKENBEASTS_PLAYER_COUNT} players will fight. Everyone else can spectate and chat.`
-    },
+    displayName: frankenbeastsCatalog.displayName,
+    usesGameBackdrop: frankenbeastsCatalog.usesGameBackdrop,
+    supportsBots: frankenbeastsCatalog.supportsBots,
+    rulesHref: frankenbeastsCatalog.rulesHref,
+    lobby: frankenbeastsCatalog.lobby,
     shouldScheduleDeadlineRefresh: (state) =>
       state.state === "pick_phase" || state.state === "fight_round" || state.state === "fight_reveal",
     render({ room, viewerPlayerId, isHost, onGameAction, onRestart }) {
@@ -170,10 +151,10 @@ const clientGameDefinitions: Record<string, ClientGameDefinition> = {
   },
   liars_dice: {
     gameType: "liars_dice",
-    displayName: "Bluffer's Hoard",
-    usesGameBackdrop: true,
-    supportsBots: true,
-    rulesHref: "/rules/liars_dice",
+    displayName: liarsDiceCatalog.displayName,
+    usesGameBackdrop: liarsDiceCatalog.usesGameBackdrop,
+    supportsBots: liarsDiceCatalog.supportsBots,
+    rulesHref: liarsDiceCatalog.rulesHref,
     shouldScheduleDeadlineRefresh: (state) =>
       state.state === "dice_roll" || state.state === "bidding" || state.state === "dice_reveal",
     render({ room, viewerPlayerId, isHost, onGameAction, onRestart }) {
@@ -191,11 +172,11 @@ const clientGameDefinitions: Record<string, ClientGameDefinition> = {
   },
   tarot: {
     gameType: "tarot",
-    displayName: "Fortune's Veil",
-    usesGameBackdrop: true,
-    supportsBots: false,
-    solo: true,
-    rulesHref: "/rules/tarot",
+    displayName: tarotCatalog.displayName,
+    usesGameBackdrop: tarotCatalog.usesGameBackdrop,
+    supportsBots: tarotCatalog.supportsBots,
+    solo: tarotCatalog.solo,
+    rulesHref: tarotCatalog.rulesHref,
     shouldScheduleDeadlineRefresh: () => false,
     render({ room, viewerPlayerId, isHost, onGameAction, onRestart }) {
       return (

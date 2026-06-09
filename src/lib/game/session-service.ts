@@ -76,9 +76,6 @@ class GameSessionService {
 
   private async ensureHydrated() {
     await this.store.hydrate(true);
-    if (this.reaper.sweepAll()) {
-      await this.persistStore();
-    }
   }
 
   private async ensureSessionHydrated(sessionId: string) {
@@ -86,28 +83,17 @@ class GameSessionService {
     // every request. Writes stay correct because a stale optimistic version
     // triggers a conflict, and the store force-rehydrates before each retry.
     await this.store.hydrateSession(sessionId, false);
-    if (this.reaper.sweepSession(sessionId)) {
-      await this.persistStore();
-    }
   }
 
   private async ensureRoomHydrated(code: string) {
     const roomCode = this.normalizeRoomCode(code);
     await this.store.hydrateRoom(roomCode, false);
-    if (this.reaper.sweepRoom(roomCode)) {
-      await this.persistStore();
-    }
     return roomCode;
   }
 
   private async ensureRoomAndSessionHydrated(code: string, sessionId: string) {
     const roomCode = this.normalizeRoomCode(code);
     await Promise.all([this.store.hydrateRoom(roomCode, false), this.store.hydrateSession(sessionId, false)]);
-    const roomChanged = this.reaper.sweepRoom(roomCode);
-    const sessionChanged = this.reaper.sweepSession(sessionId, roomCode);
-    if (roomChanged || sessionChanged) {
-      await this.persistStore();
-    }
     return roomCode;
   }
 
@@ -312,6 +298,9 @@ class GameSessionService {
       const playerId = this.sessions.requirePlayer(sessionId, roomCode);
       const room = this.leaveRoom(roomCode, playerId);
       this.sessions.clearPlayer(sessionId);
+      // Reaping is intentionally checked only on explicit leave actions.
+      this.reaper.sweepRoom(roomCode);
+      this.reaper.sweepSession(sessionId, roomCode);
       await this.persistStore();
       return room;
     });

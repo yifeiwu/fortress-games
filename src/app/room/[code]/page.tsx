@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getClientGameDefinition, getGameDisplayName, type RoomActionPayload } from "@/app/room/[code]/games/registry";
 import { MAX_ROOM_PLAYERS } from "@/lib/constants";
 import type { ChatMessage, Room } from "@/lib/types";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { attachBroadcastRefresh } from "@/lib/supabase/broadcast-refresh";
 import { Button } from "@/components/Button";
 
 // Isolated so local UI state on the room page (chat input, copy toasts) doesn't
@@ -159,69 +159,18 @@ export default function RoomPage() {
         // The next room refresh will surface stale sessions or missing rooms.
       });
     }, 12000);
-    const supabase = getSupabaseBrowserClient();
-    let fallbackPoll: number | undefined;
-    let debounce: number | undefined;
-    // Even when realtime reports SUBSCRIBED, mobile websockets frequently die
-    // mid-session without firing an error, so action-driven phase changes from
-    // other players never arrive. Run an always-on safety poll on touch devices
-    // (only while foregrounded — the visibility/focus handlers cover resync on
-    // return) so the phase keeps advancing regardless of the socket's health.
-    const mobileSafetyPoll = isTouchDevice
-      ? window.setInterval(() => {
-          if (document.visibilityState === "visible") refreshRoom(signal);
-        }, 3_000)
-      : undefined;
-    let realtimeReady = false;
-    const startFallbackPoll = () => {
-      fallbackPoll ??= window.setInterval(() => refreshRoom(signal), 30_000);
-    };
-    const scheduleRefresh = () => {
-      // Collapse the echo of our own action: we already applied the room from
-      // the POST response, so ignore the broadcast it triggered for us.
-      if (Date.now() < skipRefreshUntilRef.current) {
-        skipRefreshUntilRef.current = 0;
-        return;
-      }
-      if (debounce) window.clearTimeout(debounce);
-      debounce = window.setTimeout(() => refreshRoom(signal), 150);
-    };
-    const channel = supabase
-      ?.channel(`room:${roomCode}`)
-      .on("broadcast", { event: "*" }, scheduleRefresh)
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          realtimeReady = true;
-          if (fallbackPoll) window.clearInterval(fallbackPoll);
-          fallbackPoll = undefined;
-        }
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          startFallbackPoll();
-        }
-      });
-    const realtimeGuard = window.setTimeout(() => {
-      if (!supabase || !realtimeReady) {
-        startFallbackPoll();
-      }
-    }, 3_000);
-    // Mobile browsers throttle/suspend timers and websockets while the tab is
-    // backgrounded, so a deadline can elapse with nothing left to trigger the
-    // refresh that advances the round. Resync the moment we regain foreground.
-    const handleForeground = () => {
-      if (document.visibilityState === "visible") refreshRoom(signal);
-    };
-    document.addEventListener("visibilitychange", handleForeground);
-    window.addEventListener("focus", handleForeground);
+    const cleanupRealtime = attachBroadcastRefresh({
+      channelName: `room:${roomCode}`,
+      refresh: () => void refreshRoom(signal),
+      skipRefreshUntilRef,
+      isTouchDevice,
+      mobileSafetyPollMs: 3_000,
+      includeForegroundRefresh: true
+    });
     return () => {
       controller.abort();
       window.clearInterval(heartbeat);
-      window.clearTimeout(realtimeGuard);
-      if (debounce) window.clearTimeout(debounce);
-      if (fallbackPoll) window.clearInterval(fallbackPoll);
-      if (mobileSafetyPoll) window.clearInterval(mobileSafetyPoll);
-      document.removeEventListener("visibilitychange", handleForeground);
-      window.removeEventListener("focus", handleForeground);
-      channel?.unsubscribe();
+      cleanupRealtime();
     };
   }, [refreshRoom, roomCode, isTouchDevice]);
 

@@ -2,7 +2,7 @@ import type { GameDefinition, GameRoundResult } from "@/lib/game/contracts";
 import { createRoundSeed, mulberry32, stringToSeed } from "@/lib/game/rng";
 import type { GameState, Player, Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipGameState, SpaceshipHitDetail, SpaceshipRevealStep, SpaceshipShipState, SpaceshipThreat, SpaceshipThreatKind } from "@/lib/types";
 
-const TURN_DURATION_MS = 30_000;
+export const TURN_DURATION_MS = 30_000;
 // The round reveal plays crew actions then enemy fire one frame at a time; the
 // window scales with how many frames there are so playback isn't rushed.
 const REVEAL_BASE_MS = 1_800;
@@ -30,8 +30,8 @@ const SHOT_DAMAGE = 3;
 // out) is what banks that regen for later.
 const STARTING_ENERGY = 2;
 const ENERGY_CAP = 10;
-const ENERGY_PER_TURN = 1;
-const ACTION_ENERGY_COST: Record<SpaceshipActionType, number> = {
+export const ENERGY_PER_TURN = 1;
+export const ACTION_ENERGY_COST: Record<SpaceshipActionType, number> = {
   shoot: 1,
   // Pricey, but raises shields straight to the cap.
   shield: 3,
@@ -50,9 +50,13 @@ const ACTION_ENERGY_COST: Record<SpaceshipActionType, number> = {
  * is to its target — a nearly-charged drive is a near sure thing, a cold drive
  * is hopeless. (Energy is irrelevant — the jump itself is free.)
  */
+export function emergencyJumpChanceFromCharge(jumpCharge: number, jumpTarget: number): number {
+  if (jumpTarget <= 0) return 100;
+  return Math.max(0, Math.min(100, Math.round((jumpCharge / jumpTarget) * 100)));
+}
+
 export function emergencyJumpChance(ship: SpaceshipShipState): number {
-  if (ship.jumpTarget <= 0) return 100;
-  return Math.max(0, Math.min(100, Math.round((ship.jumpCharge / ship.jumpTarget) * 100)));
+  return emergencyJumpChanceFromCharge(ship.jumpCharge, ship.jumpTarget);
 }
 
 const THREAT_LIBRARY: Record<SpaceshipThreatKind, Omit<SpaceshipThreat, "id" | "attacksInTurns">> = {
@@ -201,7 +205,7 @@ const DESTROYER_EVERY = 3;
 // Threat level rises one tier every this many rounds. It's the single source of
 // truth for the difficulty ramp (each tier adds another contact to the stream)
 // and feeds the HUD's escalation meter.
-const ROUNDS_PER_THREAT_TIER = 3;
+export const ROUNDS_PER_THREAT_TIER = 3;
 
 /**
  * The escalation tier for a given round — a pure function so the HUD meter and
