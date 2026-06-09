@@ -10,6 +10,7 @@ import {
 import { buildSynthesis } from "@/lib/game/plugins/tarot-insights";
 import { playerName } from "@/lib/game/players";
 import type { Room, TarotDrawnCard } from "@/lib/types";
+import { Button } from "@/components/Button";
 import { TarotArtwork, TarotCardBackEmblem } from "./tarot-glyphs";
 
 interface TarotGameProps {
@@ -390,13 +391,14 @@ export function TarotGame({ room, viewerPlayerId, isHost, onSubmitSeeds, onFlip,
                 </button>
               ))}
             </div>
-            <button
+            <Button
               type="submit"
+              variant="success"
               disabled={!seekerName.trim() || !question.trim()}
-              className={`rounded bg-fuchsia-500 px-4 py-2 font-semibold text-slate-950 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${INTERACTIVE}`}
+              className={INTERACTIVE}
             >
               Begin the reading
-            </button>
+            </Button>
           </form>
         ) : (
           <p className="text-center text-sm text-slate-300">The seeker is preparing their question…</p>
@@ -510,14 +512,14 @@ export function TarotGame({ room, viewerPlayerId, isHost, onSubmitSeeds, onFlip,
           <>
             {isHost ? (
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  type="button"
+                <Button
+                  variant="success"
                   onClick={flipNext}
                   disabled={revealing}
-                  className={`rounded bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${INTERACTIVE}`}
+                  className={INTERACTIVE}
                 >
                   {nextCard ? `Flip ${nextCard.positionLabel}` : "All revealed"}
-                </button>
+                </Button>
               </div>
             ) : null}
             {isHost && nextCard ? (
@@ -555,23 +557,17 @@ export function TarotGame({ room, viewerPlayerId, isHost, onSubmitSeeds, onFlip,
             </div>
 
             <div className="mt-4 flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
+              <Button
+                variant={copied ? "success" : "secondary"}
                 onClick={handleCopyReading}
-                className={`rounded px-4 py-2 font-semibold ${INTERACTIVE} ${
-                  copied ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-100 hover:bg-slate-600"
-                }`}
+                className={INTERACTIVE}
               >
                 {copied ? "Copied" : "Copy my reading"}
-              </button>
+              </Button>
               {isHost ? (
-                <button
-                  type="button"
-                  onClick={onRestart}
-                  className={`rounded bg-fuchsia-500 px-4 py-2 font-semibold text-slate-950 hover:opacity-90 ${INTERACTIVE}`}
-                >
+                <Button variant="success" onClick={onRestart} className={INTERACTIVE}>
                   New reading
-                </button>
+                </Button>
               ) : null}
             </div>
           </div>

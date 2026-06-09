@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, type ReactNode } from "react";
+import { Button } from "@/components/Button";
 
 const CONFETTI_COLORS = ["#38bdf8", "#34d399", "#fb7185", "#fbbf24", "#a78bfa"];
 const CONFETTI_PIECES = Array.from({ length: 18 });
@@ -42,13 +43,13 @@ export function HostRestartFooter({
 }) {
   if (isHost) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="success"
         onClick={onRestart}
-        className={`rounded-xl bg-cyan-600 px-8 py-3 font-bold text-white transition hover:bg-cyan-500 ${className}`}
+        className={`rounded-xl px-8 py-3 ${className}`}
       >
         {label}
-      </button>
+      </Button>
     );
   }
   return <p className="text-sm text-slate-400">Waiting for the host to restart the game.</p>;

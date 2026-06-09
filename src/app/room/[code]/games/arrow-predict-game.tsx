@@ -8,6 +8,7 @@ import { useAnimationClock } from "@/app/room/[code]/games/shared";
 import { Confetti, GameShell } from "@/app/room/[code]/games/shared-ui";
 import { DirectionArrow } from "@/app/room/[code]/games/arrow-glyphs";
 import { Medal } from "@/app/room/[code]/games/award-icons";
+import { Button } from "@/components/Button";
 
 export const ARROW_KEY_TO_DIRECTION: Record<string, Direction> = {
   ArrowUp: "up",
@@ -497,13 +498,9 @@ export function ArrowPredictGame({ room, viewerPlayerId, isHost, onSubmitDirecti
           </div>
 
           {isHost ? (
-            <button
-              type="button"
-              className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90"
-              onClick={onRestart}
-            >
+            <Button variant="success" className="w-full" onClick={onRestart}>
               Restart game
-            </button>
+            </Button>
           ) : (
             <p className="text-center text-sm text-slate-400">Waiting for the host to restart the game.</p>
           )}

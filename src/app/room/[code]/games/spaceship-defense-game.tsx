@@ -13,6 +13,7 @@ import {
   threatLevelForRound
 } from "@/lib/game/plugins/spaceship-defense-game";
 import type { Room, SpaceshipActionType, SpaceshipCrewAction, SpaceshipHitDetail, SpaceshipShipState, SpaceshipThreat, SpaceshipThreatKind } from "@/lib/types";
+import { Button } from "@/components/Button";
 
 interface SpaceshipDefenseGameProps {
   room: Room;
@@ -1584,23 +1585,23 @@ export function SpaceshipDefenseGame({ room, viewerPlayerId, isHost, onSubmitAct
               <span>On failure the drive overloads and the ship is destroyed — game over for the whole crew.</span>
             </p>
             <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
+              <Button
+                variant="secondary"
+                className="flex-1"
                 onClick={() => setConfirmingEmergencyJump(false)}
               >
                 Cancel
-              </button>
-              <button
-                type="button"
-                className="flex-1 rounded-lg bg-orange-400 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:brightness-110"
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
                 onClick={() => {
                   setConfirmingEmergencyJump(false);
                   void submit("emergency_jump");
                 }}
               >
                 Attempt jump ({emergencyChance}%)
-              </button>
+              </Button>
             </div>
           </div>
         </div>

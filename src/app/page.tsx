@@ -352,7 +352,7 @@ export default function LobbyPage() {
                 placeholder="ABCDEF"
               />
             </label>
-            <Button className="mt-4" type="submit" disabled={isBusy || joinCode.trim().length !== 6}>
+            <Button variant="success" className="mt-4" type="submit" disabled={isBusy || joinCode.trim().length !== 6}>
               {joiningCode !== null && joiningCode === joinCode.trim() ? "Joining…" : "Join"}
             </Button>
           </form>
@@ -398,7 +398,7 @@ export default function LobbyPage() {
                         {isJoinable ? "Waiting" : "In game"}
                       </span>
                       {isJoinable ? (
-                        <Button size="sm" onClick={() => joinRoomByCode(room.code)} disabled={isBusy}>
+                        <Button variant="success" size="sm" onClick={() => joinRoomByCode(room.code)} disabled={isBusy}>
                           {joiningCode === room.code ? "Joining…" : "Join"}
                         </Button>
                       ) : null}

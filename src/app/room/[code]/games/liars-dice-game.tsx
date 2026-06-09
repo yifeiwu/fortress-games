@@ -14,6 +14,7 @@ import { playerName as resolvePlayerName } from "@/lib/game/players";
 import { useAnimationClock, useNumberChange } from "@/app/room/[code]/games/shared";
 import { Confetti, GameShell, HostRestartFooter } from "@/app/room/[code]/games/shared-ui";
 import { DiePips, HiddenCup } from "@/app/room/[code]/games/dice-faces";
+import { Button } from "@/components/Button";
 
 interface LiarsDiceGameProps {
   room: Room;
@@ -409,22 +410,22 @@ export function LiarsDiceGame({ room, viewerPlayerId, isHost, onSubmitBid, onCal
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      <Button
+                        variant="success"
+                        className="flex-1"
                         onClick={submitBid}
                         disabled={!bidIsLegal || submitting}
                       >
                         Place bid
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 rounded-lg border border-rose-500/60 bg-rose-500/15 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="flex-1"
                         onClick={callLiar}
                         disabled={!currentBid || submitting}
                       >
                         Call Liar!
-                      </button>
+                      </Button>
                     </div>
                     {!bidIsLegal ? (
                       <p className="text-center text-[11px] text-slate-500">

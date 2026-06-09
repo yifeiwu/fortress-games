@@ -337,6 +337,7 @@ export default function RoomPage() {
           <div className="flex items-center gap-2">
             {isWaitingRoom && me?.isHost ? (
               <Button
+                variant="success"
                 size="sm"
                 onClick={() => postAction({ action: "start_game" })}
                 disabled={room.players.length < 2}
@@ -480,7 +481,7 @@ export default function RoomPage() {
               {me?.isHost && clientGame?.supportsBots ? (
                 <div className="mt-3">
                   <Button
-                    variant="secondary"
+                    variant="success"
                     size="sm"
                     onClick={() => postAction({ action: "add_bot" })}
                     disabled={room.players.length >= MAX_ROOM_PLAYERS || activeSlotsFull}

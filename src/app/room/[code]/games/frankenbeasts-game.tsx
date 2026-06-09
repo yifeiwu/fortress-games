@@ -7,6 +7,7 @@ import { playerName } from "@/lib/game/players";
 import { useCountdown, useNumberChange, useStepPlayback, type NumberChange } from "@/app/room/[code]/games/shared";
 import { Confetti, GameShell, HostRestartFooter } from "@/app/room/[code]/games/shared-ui";
 import { Trophy } from "@/app/room/[code]/games/award-icons";
+import { Button } from "@/components/Button";
 import {
   ArmorIcon,
   HandshakeIcon,
@@ -454,14 +455,14 @@ function PickPhase({
             <p className="text-sm text-slate-500 italic">Select all three parts to preview your beast.</p>
           )}
         </div>
-        <button
-          type="button"
+        <Button
+          variant="success"
           onClick={handleLockIn}
           disabled={!allChosen || isLockedIn || submitting}
-          className="shrink-0 rounded-xl bg-emerald-600 px-6 py-2 font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-xl px-6 py-2 font-bold"
         >
           {isLockedIn ? "✓ Locked In!" : "Lock In"}
-        </button>
+        </Button>
       </div>
     </div>
   );

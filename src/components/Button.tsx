@@ -1,6 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "success" | "danger" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const BASE =
@@ -9,6 +9,7 @@ const BASE =
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-accent text-slate-950 hover:opacity-90 focus-visible:ring-accent",
   secondary: "bg-slate-700 text-slate-100 hover:bg-slate-600 focus-visible:ring-slate-400",
+  success: "bg-emerald-500 text-slate-950 hover:bg-emerald-400 focus-visible:ring-emerald-400",
   danger: "bg-accent-danger text-slate-950 hover:opacity-90 focus-visible:ring-accent-danger",
   ghost: "text-slate-300 hover:bg-slate-800 hover:text-slate-100 focus-visible:ring-slate-500"
 };
