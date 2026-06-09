@@ -5,7 +5,7 @@ import { SESSION_COOKIE_NAME } from "@/lib/session";
 import { isRuntimeStateConflictError } from "@/lib/supabase/runtime-state";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { code: string } }
 ) {
   const service = getGameSessionService();
@@ -14,7 +14,30 @@ export async function GET(
     if (!sessionId) {
       return NextResponse.json({ error: "Missing session." }, { status: 401 });
     }
-    const result = await service.getRoomForSession(params.code.toUpperCase(), sessionId);
+    const { searchParams } = new URL(request.url);
+    const knownGameVersion = searchParams.get("gv");
+    const knownChatCount = searchParams.get("cc");
+    const knownViewerPlayerId = searchParams.get("vp");
+    const knownRoomStatus = searchParams.get("rs");
+    const knownHostPlayerId = searchParams.get("hp");
+    const knownPresenceSignature = searchParams.get("ps");
+    const hasFingerprint =
+      knownGameVersion !== null &&
+      knownChatCount !== null &&
+      knownViewerPlayerId !== null &&
+      knownRoomStatus !== null &&
+      knownHostPlayerId !== null &&
+      knownPresenceSignature !== null;
+    const result = hasFingerprint
+      ? await service.getRoomForSessionConditional(params.code.toUpperCase(), sessionId, {
+          gameVersion: Number(knownGameVersion),
+          chatCount: Number(knownChatCount),
+          viewerPlayerId: knownViewerPlayerId === "" ? null : knownViewerPlayerId,
+          roomStatus: knownRoomStatus as "lobby" | "in_game" | "ended",
+          hostPlayerId: knownHostPlayerId,
+          playerPresenceSignature: knownPresenceSignature
+        })
+      : await service.getRoomForSession(params.code.toUpperCase(), sessionId);
     return NextResponse.json(result);
   } catch (error) {
     if (isRuntimeStateConflictError(error)) {

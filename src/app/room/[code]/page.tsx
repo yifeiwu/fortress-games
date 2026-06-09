@@ -8,6 +8,23 @@ import type { ChatMessage, Room } from "@/lib/types";
 import { attachBroadcastRefresh } from "@/lib/supabase/broadcast-refresh";
 import { Button } from "@/components/Button";
 
+interface RoomViewFingerprint {
+  gameVersion: number;
+  chatCount: number;
+  viewerPlayerId: string | null;
+  roomStatus: Room["status"];
+  hostPlayerId: string;
+  playerPresenceSignature: string;
+}
+
+interface RoomConditionalResponse {
+  room?: Room;
+  viewerPlayerId?: string | null;
+  fingerprint?: RoomViewFingerprint;
+  unchanged?: boolean;
+  error?: string;
+}
+
 // Isolated so local UI state on the room page (chat input, copy toasts) doesn't
 // re-render the whole message list on every keystroke; it only re-renders when
 // the messages or viewer actually change.
@@ -54,6 +71,7 @@ export default function RoomPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const roomFingerprintRef = useRef<RoomViewFingerprint | null>(null);
   // After applying a room from a POST response, the server also broadcasts the
   // same event back to us. Skip the immediate echo refresh so the actor doesn't
   // re-fetch state it already has.
@@ -102,11 +120,17 @@ export default function RoomPage() {
   const isRoomNotFoundError = (message?: string) => /room not found/i.test(message ?? "");
 
   const refreshRoom = useCallback(async (signal?: AbortSignal) => {
+    const known = roomFingerprintRef.current;
+    const query = known
+      ? `?gv=${known.gameVersion}&cc=${known.chatCount}&vp=${encodeURIComponent(known.viewerPlayerId ?? "")}&rs=${known.roomStatus}&hp=${encodeURIComponent(
+          known.hostPlayerId
+        )}&ps=${encodeURIComponent(known.playerPresenceSignature)}`
+      : "";
     let response: Response;
-    let data: { room?: Room; viewerPlayerId?: string | null; error?: string };
+    let data: RoomConditionalResponse;
     try {
-      response = await fetch(`/api/rooms/${roomCode}`, { cache: "no-store", signal });
-      data = (await response.json()) as { room?: Room; viewerPlayerId?: string | null; error?: string };
+      response = await fetch(`/api/rooms/${roomCode}${query}`, { cache: "no-store", signal });
+      data = (await response.json()) as RoomConditionalResponse;
     } catch {
       // Aborted (the page navigated away) or a transient network error. Either
       // way, drop this poll so a stale request can't redirect us out of a room
@@ -116,7 +140,7 @@ export default function RoomPage() {
     // The page tore down (e.g. after leaving) while this request was in flight.
     // Ignoring it prevents a stale poll from kicking the player out.
     if (signal?.aborted) return;
-    if (!response.ok || !data.room) {
+    if (!response.ok || (!data.room && !data.unchanged)) {
       if (response.status === 404 || isRoomNotFoundError(data.error)) {
         router.push("/");
         return;
@@ -132,18 +156,50 @@ export default function RoomPage() {
       }
       return;
     }
+    if (data.unchanged) {
+      if (data.viewerPlayerId !== undefined) {
+        setViewerPlayerId(data.viewerPlayerId);
+      }
+      if (data.fingerprint) {
+        roomFingerprintRef.current = data.fingerprint;
+      }
+      return;
+    }
+    const fullRoom = data.room;
+    if (!fullRoom) {
+      setError(data.error ?? "Room unavailable.");
+      return;
+    }
     if (!data.viewerPlayerId) {
       setError("Join this room from the lobby first.");
       router.push("/");
       return;
     }
-    if (data.room.status === "ended") {
+    if (fullRoom.status === "ended") {
       router.push("/");
       return;
     }
+    if (data.fingerprint) {
+      roomFingerprintRef.current = data.fingerprint;
+    }
     setViewerPlayerId(data.viewerPlayerId);
-    setRoom(data.room);
+    setRoom(fullRoom);
   }, [roomCode, router]);
+
+  useEffect(() => {
+    if (!room) {
+      roomFingerprintRef.current = null;
+      return;
+    }
+    roomFingerprintRef.current = {
+      gameVersion: room.game.version,
+      chatCount: room.chat.length,
+      viewerPlayerId,
+      roomStatus: room.status,
+      hostPlayerId: room.hostPlayerId,
+      playerPresenceSignature: room.players.map((player) => `${player.id}:${player.connected ? "1" : "0"}`).join("|")
+    };
+  }, [room, viewerPlayerId]);
 
   useEffect(() => {
     const controller = new AbortController();

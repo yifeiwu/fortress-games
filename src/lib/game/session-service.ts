@@ -35,6 +35,20 @@ const MAX_CONFLICT_RETRIES = 4;
 const CHAT_RATE_WINDOW_MS = 10_000;
 const CHAT_RATE_MAX_MESSAGES = 10;
 
+interface RoomViewFingerprint {
+  gameVersion: number;
+  chatCount: number;
+  viewerPlayerId: string | null;
+  roomStatus: Room["status"];
+  hostPlayerId: string;
+  playerPresenceSignature: string;
+}
+
+interface RoomSyncResult {
+  room: Room;
+  roomCode: string;
+}
+
 class GameSessionService {
   private store: GameStore;
   private chatRateLimiter = new ChatRateLimiter(CHAT_RATE_WINDOW_MS, CHAT_RATE_MAX_MESSAGES);
@@ -111,6 +125,10 @@ class GameSessionService {
 
   private touchRoom(room: Room, at = Date.now()) {
     room.lastActivityAt = at;
+  }
+
+  private playerPresenceSignature(room: Room): string {
+    return room.players.map((player) => `${player.id}:${player.connected ? "1" : "0"}`).join("|");
   }
 
   private getChat(code: string): ChatMessage[] {
@@ -259,26 +277,31 @@ class GameSessionService {
 
   async getRoom(code: string) {
     return this.withConflictRetry(async () => {
-      const roomCode = await this.ensureRoomHydrated(code);
-      const room = this.mustGetRoom(roomCode);
-      const beforeStateVersion = room.game.version;
-      const beforeStatus = room.status;
-      const beforeHost = room.hostPlayerId;
-      const beforePresence = room.players.map((player) => `${player.id}:${player.connected ? "1" : "0"}`).join("|");
-      this.reconcilePresence(room);
-      maybeCloseRound(room);
-      const afterPresence = room.players.map((player) => `${player.id}:${player.connected ? "1" : "0"}`).join("|");
-      const changed =
-        room.game.version !== beforeStateVersion ||
-        room.status !== beforeStatus ||
-        room.hostPlayerId !== beforeHost ||
-        afterPresence !== beforePresence;
-      if (changed) {
-        this.touchRoom(room);
-        await this.persistStore();
-      }
+      const { room } = await this.syncRoomState(code);
       return this.toClientRoom(room);
     });
+  }
+
+  private async syncRoomState(code: string): Promise<RoomSyncResult> {
+    const roomCode = await this.ensureRoomHydrated(code);
+    const room = this.mustGetRoom(roomCode);
+    const beforeStateVersion = room.game.version;
+    const beforeStatus = room.status;
+    const beforeHost = room.hostPlayerId;
+    const beforePresence = this.playerPresenceSignature(room);
+    this.reconcilePresence(room);
+    maybeCloseRound(room);
+    const afterPresence = this.playerPresenceSignature(room);
+    const changed =
+      room.game.version !== beforeStateVersion ||
+      room.status !== beforeStatus ||
+      room.hostPlayerId !== beforeHost ||
+      afterPresence !== beforePresence;
+    if (changed) {
+      this.touchRoom(room);
+      await this.persistStore();
+    }
+    return { room, roomCode };
   }
 
   async getRoomForSession(code: string, sessionId: string) {
@@ -290,6 +313,58 @@ class GameSessionService {
       room.chat = [];
     }
     return { room, viewerPlayerId };
+  }
+
+  async getRoomForSessionConditional(code: string, sessionId: string, known?: Partial<RoomViewFingerprint>) {
+    return this.withConflictRetry(async () => {
+      const roomCode = await this.ensureRoomAndSessionHydrated(code, sessionId);
+      const { room } = await this.syncRoomState(roomCode);
+      const viewerPlayerId = this.getSessionPlayerId(sessionId, room.code);
+      const chatCount = this.getChat(room.code).length;
+      const playerPresenceSignature = this.playerPresenceSignature(room);
+      const fingerprint: RoomViewFingerprint = {
+        gameVersion: room.game.version,
+        chatCount,
+        viewerPlayerId,
+        roomStatus: room.status,
+        hostPlayerId: room.hostPlayerId,
+        playerPresenceSignature
+      };
+
+      const unchanged = Boolean(
+        known &&
+          known.gameVersion === fingerprint.gameVersion &&
+          known.chatCount === fingerprint.chatCount &&
+          known.viewerPlayerId === fingerprint.viewerPlayerId &&
+          known.roomStatus === fingerprint.roomStatus &&
+          known.hostPlayerId === fingerprint.hostPlayerId &&
+          known.playerPresenceSignature === fingerprint.playerPresenceSignature
+      );
+
+      if (unchanged) {
+        return {
+          unchanged: true as const,
+          viewerPlayerId,
+          fingerprint,
+          room: {
+            code: room.code,
+            status: room.status,
+            game: {
+              state: room.game.state,
+              roundIndex: room.game.roundIndex,
+              roundDeadlineAt: room.game.roundDeadlineAt,
+              version: room.game.version
+            }
+          }
+        };
+      }
+
+      const clientRoom = this.toClientRoom(room);
+      if (!viewerPlayerId) {
+        clientRoom.chat = [];
+      }
+      return { unchanged: false as const, viewerPlayerId, room: clientRoom, fingerprint };
+    });
   }
 
   async leaveRoomForSession(code: string, sessionId: string) {
