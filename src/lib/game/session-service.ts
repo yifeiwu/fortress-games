@@ -1,7 +1,6 @@
 import { getGameDefinition } from "@/lib/game/registry";
 import { ChatRateLimiter } from "@/lib/game/chat-rate-limiter";
 import { PresenceTracker } from "@/lib/game/presence-tracker";
-import { RuntimeReaper } from "@/lib/game/runtime-reaper";
 import { SessionDirectory } from "@/lib/game/session-directory";
 import {
   applyGameBots,
@@ -54,14 +53,12 @@ class GameSessionService {
   private chatRateLimiter = new ChatRateLimiter(CHAT_RATE_WINDOW_MS, CHAT_RATE_MAX_MESSAGES);
   private presence: PresenceTracker;
   private sessions: SessionDirectory;
-  private reaper: RuntimeReaper;
 
   constructor(store: GameStore = getSupabaseGameStore()) {
     this.store = store;
     const normalize = (code: string) => this.normalizeRoomCode(code);
     this.presence = new PresenceTracker(this.store, normalize);
     this.sessions = new SessionDirectory(this.store, normalize);
-    this.reaper = new RuntimeReaper(this.store, this.presence, normalize, ROOM_INACTIVITY_TTL_MS);
   }
 
   /**
@@ -188,9 +185,9 @@ class GameSessionService {
     // Use the lightweight summary read so the lobby doesn't full-hydrate the
     // entire fleet into the in-memory singleton (and grow its persist scan).
     const summaries = await this.store.listRoomSummaries();
-    const now = Date.now();
     return summaries
-      .filter((room) => room.status !== "ended" && now - room.lastActivityAt <= ROOM_INACTIVITY_TTL_MS)
+      // Runtime cleanup is cron-owned; request paths do not hide/reap stale rows.
+      .filter((room) => room.status !== "ended")
       .map(({ code, gameType, status, playerCount }) => ({ code, gameType, status, playerCount }));
   }
 
@@ -373,9 +370,7 @@ class GameSessionService {
       const playerId = this.sessions.requirePlayer(sessionId, roomCode);
       const room = this.leaveRoom(roomCode, playerId);
       this.sessions.clearPlayer(sessionId);
-      // Reaping is intentionally checked only on explicit leave actions.
-      this.reaper.sweepRoom(roomCode);
-      this.reaper.sweepSession(sessionId, roomCode);
+      // Runtime cleanup is cron-owned; request paths no longer reap room/session rows.
       await this.persistStore();
       return room;
     });

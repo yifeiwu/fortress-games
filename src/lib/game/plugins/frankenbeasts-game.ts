@@ -1,4 +1,5 @@
 import type { GameDefinition, GameRoundResult } from "@/lib/game/contracts";
+import { mulberry32, stringToSeed } from "@/lib/game/rng";
 import type {
   FBCombatStatus,
   FBLogEntry,
@@ -42,6 +43,11 @@ const MAX_FIGHT_ROUNDS = 30;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const activeFighterIds = resolveFighterIds;
+
+function botRng(state: GameState, salt: string): () => number {
+  const seed = state.rngByRound[state.roundIndex]?.seedPlain ?? "fallback";
+  return mulberry32(stringToSeed(`${seed}:${state.roundIndex}:${salt}`));
+}
 
 function appendLog(log: FrankenBeastsGameState["log"], message: string, roundIndex: number): FrankenBeastsGameState["log"] {
   const entry: FBLogEntry = {
@@ -791,14 +797,25 @@ export const frankenBeastsGameDefinition: GameDefinition = {
     if (!state.frankenbeasts) return state;
     let nextState = state;
 
-    // Pick phase: lock in a random beast for any bot that hasn't yet.
+    // Pick phase: lock in a seeded, matchup-aware beast for each bot.
     if (nextState.state === "pick_phase") {
       const fighterIds = activeFighterIds(room, nextState.frankenbeasts);
       for (const player of room.players) {
         if (!fighterIds?.includes(player.id)) continue;
         if (!player.isBot) continue;
         if (nextState.frankenbeasts!.pendingPicks[player.id]?.lockedIn) continue;
-        const parts = chooseBotParts();
+        const fb = nextState.frankenbeasts!;
+        const opponentId = fighterIds.find((id) => id !== player.id);
+        const opponentPick = opponentId ? fb.pendingPicks[opponentId] : undefined;
+        const opponentParts =
+          opponentPick?.headId && opponentPick?.bodyId && opponentPick?.tailId
+            ? {
+                headId: opponentPick.headId,
+                bodyId: opponentPick.bodyId,
+                tailId: opponentPick.tailId
+              }
+            : undefined;
+        const parts = chooseBotParts(botRng(nextState, `pick:${player.id}`), opponentParts);
         nextState = frankenBeastsGameDefinition.applyCommand({
           room,
           state: nextState,
@@ -808,7 +825,7 @@ export const frankenBeastsGameDefinition: GameDefinition = {
       }
     }
 
-    // Fight round: choose a random ability for any bot without a selection.
+    // Fight round: choose a seeded, context-aware ability for each bot.
     // (Picking above may have just advanced us into the first fight round.)
     if (nextState.state === "fight_round") {
       const fighterIds = activeFighterIds(room, nextState.frankenbeasts);
@@ -819,10 +836,13 @@ export const frankenBeastsGameDefinition: GameDefinition = {
         if (fb.roundSelections?.[player.id]) continue;
         const status = fb.combatStates[player.id];
         if (!status) continue;
+        const opponentId = fighterIds.find((id) => id !== player.id);
+        const opponentStatus = opponentId ? fb.combatStates[opponentId] : undefined;
+        const rng = botRng(nextState, `fight:${player.id}:${opponentId ?? "none"}`);
         nextState = frankenBeastsGameDefinition.applyCommand({
           room,
           state: nextState,
-          command: { type: "submit_fb_action", abilityId: chooseBotAbility(status) },
+          command: { type: "submit_fb_action", abilityId: chooseBotAbility(status, opponentStatus, rng) },
           context: { now, actorPlayerId: player.id }
         });
       }

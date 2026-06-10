@@ -18,6 +18,8 @@ interface BotMoveArgs {
   botPlayerId: string;
 }
 
+const FACE_PROBABILITY = 1 / DIE_FACES;
+
 /** The bot's own dice for this round (empty if it isn't seated, defensively). */
 function botDice(state: GameState, botPlayerId: string): LiarsDicePlayerState | undefined {
   return state.liarsDice?.players.find((player) => player.playerId === botPlayerId);
@@ -46,31 +48,48 @@ export function chooseLiarsDiceMove({ room, state, botPlayerId }: BotMoveArgs): 
     )
   );
 
-  // Expected total count of `face` across the table given the bot's own dice.
-  const estimateForFace = (face: number) => countFace(myDice, face) + othersDice / DIE_FACES;
+  // Probabilistic confidence model: how likely the table can satisfy a claim.
+  const bidTruthProbability = (quantity: number, face: number): number => {
+    const mine = countFace(myDice, face);
+    const neededFromOthers = quantity - mine;
+    return probabilityAtLeast(neededFromOthers, othersDice, FACE_PROBABILITY);
+  };
 
   // Opening bid: claim a face the bot actually holds, sized to what it sees.
   if (!currentBid) {
     const face = bestFace(myDice, rand);
-    const quantity = Math.max(1, Math.round(estimateForFace(face)));
-    return { type: "submit_bid", quantity: Math.min(quantity, Math.max(1, totalDice)), face };
+    const mine = countFace(myDice, face);
+    const expectedOthers = Math.round(othersDice * FACE_PROBABILITY);
+    const conservativeBias = rand() < 0.65 ? 1 : 0;
+    const quantity = Math.max(1, Math.min(totalDice, mine + Math.max(0, expectedOthers - conservativeBias)));
+    return { type: "submit_bid", quantity, face };
   }
 
-  const estimate = estimateForFace(currentBid.face);
-  // Slack makes the bot bluff-tolerant and not perfectly predictable.
-  const slack = 1 + rand();
+  const confidenceCurrent = bidTruthProbability(currentBid.quantity, currentBid.face);
+  // Smaller stacks should challenge more often; large stacks can float bluffs.
+  const callThreshold = 0.22 + (myDiceCount <= 2 ? 0.08 : 0) + rand() * 0.08;
   const impossible = currentBid.quantity > totalDice;
-  if (impossible || currentBid.quantity > estimate + slack) {
+  if (impossible || confidenceCurrent < callThreshold) {
     return { type: "call_liar" };
   }
 
-  // Otherwise raise. Prefer a face the bot holds well; pick the minimal legal
-  // raise toward it, falling back to the smallest legal raise.
-  const targetFace = bestFace(myDice, rand);
-  const desiredQuantity = Math.max(currentBid.quantity, Math.round(estimateForFace(targetFace)));
-  const candidate = { quantity: Math.min(desiredQuantity, totalDice), face: targetFace };
-  if (isHigherBid(candidate, currentBid)) {
-    return { type: "submit_bid", quantity: candidate.quantity, face: candidate.face };
+  // Otherwise raise. Score a short horizon of legal raises by confidence, then
+  // softly prefer lower overcalls so the bot doesn't inflate too wildly.
+  const legalMoves = enumerateRaises(currentBid, totalDice, 16);
+  let bestMove: { quantity: number; face: number } | undefined;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  legalMoves.forEach((move, index) => {
+    const confidence = bidTruthProbability(move.quantity, move.face);
+    const overcallPenalty = index * 0.02;
+    const faceFitBonus = countFace(myDice, move.face) * 0.03;
+    const score = confidence + faceFitBonus - overcallPenalty;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = move;
+    }
+  });
+  if (bestMove !== undefined && isHigherBid(bestMove, currentBid)) {
+    return { type: "submit_bid", quantity: bestMove.quantity, face: bestMove.face };
   }
 
   const minimal = minLegalRaise(currentBid, totalDice);
@@ -94,4 +113,40 @@ function bestFace(dice: number[], rand: () => number): number {
     }
   }
   return best;
+}
+
+function enumerateRaises(
+  currentBid: { quantity: number; face: number },
+  totalDice: number,
+  limit: number
+): Array<{ quantity: number; face: number }> {
+  const raises: Array<{ quantity: number; face: number }> = [];
+  let cursor = minLegalRaise(currentBid, totalDice);
+  while (cursor && raises.length < limit) {
+    raises.push(cursor);
+    cursor = minLegalRaise(cursor, totalDice);
+  }
+  return raises;
+}
+
+function probabilityAtLeast(requiredSuccesses: number, trials: number, successProbability: number): number {
+  if (requiredSuccesses <= 0) return 1;
+  if (requiredSuccesses > trials) return 0;
+  let total = 0;
+  for (let successes = requiredSuccesses; successes <= trials; successes += 1) {
+    total +=
+      binomialCoefficient(trials, successes) *
+      successProbability ** successes *
+      (1 - successProbability) ** (trials - successes);
+  }
+  return total;
+}
+
+function binomialCoefficient(n: number, k: number): number {
+  const m = Math.min(k, n - k);
+  let result = 1;
+  for (let i = 1; i <= m; i += 1) {
+    result = (result * (n - m + i)) / i;
+  }
+  return result;
 }

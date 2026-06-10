@@ -765,20 +765,36 @@ function chooseSpaceshipBotAction(state: GameState): { action: SpaceshipActionTy
     return { action: "jump_away" };
   }
 
+  const incomingNow = threats.filter((threat) => threat.attacksInTurns <= 1).reduce((total, threat) => total + threat.attack, 0);
+  const incomingNext = threats.filter((threat) => threat.attacksInTurns <= 2).reduce((total, threat) => total + threat.attack, 0);
+  const emergencyChance = emergencyJumpChance(ship);
+
+  // If incoming fire is likely fatal anyway, take the emergency-jump gamble.
+  if ((ship.hull <= 2 && emergencyChance >= 55) || (incomingNow >= ship.hull + ship.shields && emergencyChance >= 45)) {
+    return { action: "emergency_jump" };
+  }
+
+  const target = [...threats].sort((a, b) => {
+    const score = (threat: SpaceshipThreat): number => {
+      const urgency = Math.max(0, 4 - threat.attacksInTurns) * 5;
+      const lethality = threat.attack * 2;
+      const killNowBonus = threat.health <= SHOT_DAMAGE ? 3 : 0;
+      const stealthBonus = threat.attackRevealed ? 0 : 1;
+      return urgency + lethality + killNowBonus + stealthBonus;
+    };
+    return score(b) - score(a);
+  })[0];
+
   const desired = ((): { action: SpaceshipActionType; targetThreatId?: string } => {
-    const incomingSoon = threats
-      .filter((threat) => threat.attacksInTurns <= 1)
-      .reduce((total, threat) => total + threat.attack, 0);
-    if (incomingSoon > ship.shields && ship.shields < ship.shieldCap) {
+    if (incomingNow > ship.shields && ship.shields < ship.shieldCap && (incomingNow >= 3 || ship.hull <= 4)) {
       return { action: "shield" };
     }
-    const target = [...threats].sort((a, b) => {
-      const urgency = a.attacksInTurns - b.attacksInTurns;
-      if (urgency !== 0) return urgency;
-      const attack = b.attack - a.attack;
-      if (attack !== 0) return attack;
-      return a.health - b.health;
-    })[0];
+    if (target && (target.attacksInTurns <= 1 || target.health <= SHOT_DAMAGE || incomingNext >= ship.shields + ship.hull - 1)) {
+      return { action: "shoot", targetThreatId: target.id };
+    }
+    if (ship.jumpTarget - ship.jumpCharge <= 2 && incomingNow <= ship.shields) {
+      return { action: "charge_jump" };
+    }
     if (target) {
       return { action: "shoot", targetThreatId: target.id };
     }

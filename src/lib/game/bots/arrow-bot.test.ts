@@ -49,3 +49,50 @@ test("arrow bot is deterministic per seed and bot id", () => {
   });
   assert.equal(a, b);
 });
+
+test("non-leader bot usually dodges a known leader direction", () => {
+  const room = {
+    code: "ABCDEF",
+    gameType: "arrow_predict",
+    status: "in_game",
+    createdAt: 1,
+    hostPlayerId: "host",
+    players: [],
+    chat: [],
+    game: {
+      gameType: "arrow_predict",
+      state: "round_open",
+      roundIndex: 0,
+      maxRounds: 1,
+      roundDeadlineAt: 10000,
+      leaderPlayerId: "host",
+      scores: {},
+      choicesByRound: {},
+      rngByRound: {
+        0: {
+          roundIndex: 0,
+          seedHash: "hash",
+          seedPlain: "seedB",
+          rngAlgo: "mulberry32"
+        }
+      },
+      version: 1
+    }
+  } as Room;
+
+  const direction = arrowBotStrategy.chooseDirection({
+    botPlayerId: "bot_1",
+    room,
+    state: room.game,
+    now: 5,
+    roundChoices: {
+      host: {
+        playerId: "host",
+        direction: "left",
+        submittedAt: 1,
+        autoSubmitted: false
+      }
+    }
+  });
+  assert.notEqual(direction, "left");
+});

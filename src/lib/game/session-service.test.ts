@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGameSessionService, ROOM_INACTIVITY_TTL_MS } from "@/lib/game/session-service";
+import { createGameSessionService } from "@/lib/game/session-service";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/game/presence-tracker";
 import { InMemoryGameStore } from "@/lib/store/in-memory-store";
 
@@ -109,17 +109,18 @@ test("room lookups tolerate whitespace and lowercase codes", async () => {
   assert.equal(fetched.code, code);
 });
 
-test("inactive rooms are cleaned up after the inactivity TTL", async () => {
+test("inactive rooms stay listed until cron cleanup runs", async () => {
   const service = createGameSessionService(new InMemoryGameStore());
 
   await service.setSessionUsername("session-a", "Host");
   const created = await service.createRoomForSession("session-a", "arrow_predict");
   const code = created.code;
-  await service.setRoomLastActivityForTests(code, Date.now() - ROOM_INACTIVITY_TTL_MS - 60_000);
+  await service.setRoomLastActivityForTests(code, Date.now() - 31 * 60 * 1_000);
 
   const rooms = await service.listRooms();
-  assert.equal(rooms.length, 0);
-  await assert.rejects(() => service.getRoom(code), /room not found/i);
+  assert.equal(rooms.some((room) => room.code === code), true);
+  const room = await service.getRoom(code);
+  assert.equal(room.code, code);
 });
 
 test("max rounds stay fixed after game starts", async () => {
@@ -187,7 +188,7 @@ test("starting requires at least two players", async () => {
   assert.equal(room.game.state, "intro");
 });
 
-test("rooms with no human players are culled on next access", async () => {
+test("rooms with no human players remain until cron cleanup", async () => {
   const service = createGameSessionService(new InMemoryGameStore());
 
   await service.setSessionUsername("session-host", "Host");
@@ -197,7 +198,8 @@ test("rooms with no human players are culled on next access", async () => {
   await service.addBotForSession(code, "session-host");
   await service.leaveRoomForSession(code, "session-host");
 
-  await assert.rejects(() => service.getRoom(code), /room not found/i);
+  const room = await service.getRoom(code);
+  assert.equal(room.status, "ended");
 });
 
 test("starshield rooms can add fortress-bot players that take turns", async () => {
