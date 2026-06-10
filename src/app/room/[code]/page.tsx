@@ -289,6 +289,7 @@ export default function RoomPage() {
   );
 
   const isHost = Boolean(me?.isHost);
+  const canKickPlayers = isWaitingRoom && isHost && room.gameType !== "tarot";
   // Memoize the live game element so unrelated room-page re-renders (chat input,
   // copy toasts) don't re-render the entire game subtree. postAction is stable,
   // so this only recomputes when the room/viewer/host actually change.
@@ -525,11 +526,23 @@ export default function RoomPage() {
                           </span>
                         ) : null}
                       </div>
-                      {role ? (
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${role.className}`}>
-                          {role.label}
-                        </span>
-                      ) : null}
+                      <div className="flex items-center gap-2">
+                        {role ? (
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${role.className}`}>
+                            {role.label}
+                          </span>
+                        ) : null}
+                        {canKickPlayers && player.id !== viewerPlayerId ? (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => postAction({ action: "kick_player", targetPlayerId: player.id })}
+                            title={`Kick ${player.name}`}
+                          >
+                            Kick
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })}

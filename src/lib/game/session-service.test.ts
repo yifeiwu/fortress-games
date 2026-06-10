@@ -324,3 +324,34 @@ test("host can restart a finished game back to the lobby", async () => {
   assert.equal(restarted.game.state, "waiting");
   assert.equal(restarted.game.scores[hostId], 0);
 });
+
+test("host can kick another player from the room", async () => {
+  const service = createGameSessionService(new InMemoryGameStore());
+  const created = service.createRoom("Host", "arrow_predict");
+  const code = created.room.code;
+  const hostId = created.playerId;
+  const targetId = service.joinRoom(code, "Player2").playerId;
+
+  const updated = service.kickPlayer(code, hostId, targetId);
+  assert.equal(updated.players.some((player) => player.id === targetId), false);
+});
+
+test("non-host cannot kick players", async () => {
+  const service = createGameSessionService(new InMemoryGameStore());
+  const created = service.createRoom("Host", "arrow_predict");
+  const code = created.room.code;
+  const hostId = created.playerId;
+  const targetId = service.joinRoom(code, "Player2").playerId;
+
+  assert.throws(() => service.kickPlayer(code, targetId, hostId), /only host can kick players/i);
+});
+
+test("kicking is disabled for tarot rooms", async () => {
+  const service = createGameSessionService(new InMemoryGameStore());
+  const created = service.createRoom("Host", "tarot");
+  const code = created.room.code;
+  const hostId = created.playerId;
+  const targetId = service.joinRoom(code, "Player2").playerId;
+
+  assert.throws(() => service.kickPlayer(code, hostId, targetId), /disabled for tarot/i);
+});

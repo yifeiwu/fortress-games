@@ -11,6 +11,7 @@ type RoomAction =
   | "start_game"
   | "restart_game"
   | "add_bot"
+  | "kick_player"
   | "heartbeat";
 
 export async function POST(
@@ -25,6 +26,7 @@ export async function POST(
     targetThreatId?: string;
     quantity?: number;
     face?: number;
+    targetPlayerId?: string;
   };
   const service = getGameSessionService();
   const roomCode = params.code.toUpperCase();
@@ -56,6 +58,11 @@ export async function POST(
     }
     if (body.action === "add_bot") {
       const room = await service.addBotForSession(roomCode, sessionId);
+      await publishRoomAndLobby(roomCode, "ROOM_UPDATED");
+      return NextResponse.json({ room });
+    }
+    if (body.action === "kick_player" && body.targetPlayerId) {
+      const room = await service.kickPlayerForSession(roomCode, sessionId, body.targetPlayerId);
       await publishRoomAndLobby(roomCode, "ROOM_UPDATED");
       return NextResponse.json({ room });
     }

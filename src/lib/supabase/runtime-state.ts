@@ -35,6 +35,8 @@ export interface VersionedRoomKeyedState<T> {
   version: number;
 }
 
+const RECENT_ROOMS_TO_KEEP = 10;
+
 interface RuntimeRow<T> {
   payload: T;
   version: number;
@@ -289,29 +291,50 @@ export async function purgeStaleRuntimeStateRows(olderThanIso: string): Promise<
   }
   const activeRoomCodes = [...new Set((freshPresence ?? []).map((row) => row.room_code as string))];
 
-  let roomDelete = client.from("room_runtime_state").delete().lt("updated_at", olderThanIso);
-  if (activeRoomCodes.length) {
-    // room_code is constrained to ^[A-Z]{6}$, so this list is safe to inline.
-    roomDelete = roomDelete.not("room_code", "in", `(${activeRoomCodes.join(",")})`);
+  const { data: recentRooms, error: recentRoomsError } = await client
+    .from("room_runtime_state")
+    .select("room_code")
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(RECENT_ROOMS_TO_KEEP);
+  if (recentRoomsError) {
+    throw new Error(`Failed to read recent rooms: ${recentRoomsError.message}`);
   }
+  const recentRoomCodes = [...new Set((recentRooms ?? []).map((row) => row.room_code as string))];
+  const protectedRoomCodes = [...new Set([...activeRoomCodes, ...recentRoomCodes])];
 
-  const [rooms, sessions, chats, presence] = await Promise.all([
-    roomDelete,
-    client.from("player_session_state").delete().lt("updated_at", olderThanIso),
-    client.from("room_chat_state").delete().lt("updated_at", olderThanIso),
-    client.from("room_presence_state").delete().lt("updated_at", olderThanIso)
+  let staleRoomQuery = client
+    .from("room_runtime_state")
+    .select("room_code")
+    .is("deleted_at", null)
+    .lt("updated_at", olderThanIso);
+  if (protectedRoomCodes.length) {
+    // room_code is constrained to ^[A-Z]{6}$, so this list is safe to inline.
+    staleRoomQuery = staleRoomQuery.not("room_code", "in", `(${protectedRoomCodes.join(",")})`);
+  }
+  const { data: staleRooms, error: staleRoomsError } = await staleRoomQuery;
+  if (staleRoomsError) {
+    throw new Error(`Failed to read stale room runtime state: ${staleRoomsError.message}`);
+  }
+  const staleRoomCodes = [...new Set((staleRooms ?? []).map((row) => row.room_code as string))];
+
+  const [rooms, chats, presence, sessions] = await Promise.all([
+    staleRoomCodes.length ? client.from("room_runtime_state").delete().in("room_code", staleRoomCodes) : Promise.resolve({ error: null }),
+    staleRoomCodes.length ? client.from("room_chat_state").delete().in("room_code", staleRoomCodes) : Promise.resolve({ error: null }),
+    staleRoomCodes.length ? client.from("room_presence_state").delete().in("room_code", staleRoomCodes) : Promise.resolve({ error: null }),
+    client.from("player_session_state").delete().lt("updated_at", olderThanIso)
   ]);
   if (rooms.error) {
     throw new Error(`Failed to purge stale room runtime state: ${rooms.error.message}`);
-  }
-  if (sessions.error) {
-    throw new Error(`Failed to purge stale session runtime state: ${sessions.error.message}`);
   }
   if (chats.error) {
     throw new Error(`Failed to purge stale room chat state: ${chats.error.message}`);
   }
   if (presence.error) {
     throw new Error(`Failed to purge stale room presence state: ${presence.error.message}`);
+  }
+  if (sessions.error) {
+    throw new Error(`Failed to purge stale session runtime state: ${sessions.error.message}`);
   }
 }
 

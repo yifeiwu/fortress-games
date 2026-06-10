@@ -523,6 +523,48 @@ class GameSessionService {
     });
   }
 
+  async kickPlayerForSession(code: string, sessionId: string, targetPlayerId: string) {
+    return this.withConflictRetry(async () => {
+      const roomCode = await this.ensureRoomAndSessionHydrated(code, sessionId);
+      const actorId = this.sessions.requirePlayer(sessionId, roomCode);
+      const room = this.kickPlayer(roomCode, actorId, targetPlayerId);
+      await this.persistStore();
+      return room;
+    });
+  }
+
+  kickPlayer(code: string, actorId: string, targetPlayerId: string) {
+    const room = this.mustGetRoom(code);
+    if (room.gameType === "tarot") {
+      throw new Error("Kicking players is disabled for tarot rooms.");
+    }
+    if (room.hostPlayerId !== actorId) {
+      throw new Error("Only host can kick players.");
+    }
+    if (actorId === targetPlayerId) {
+      throw new Error("Host cannot kick themselves.");
+    }
+    const target = room.players.find((player) => player.id === targetPlayerId);
+    if (!target) {
+      throw new Error("Player not found.");
+    }
+    const nextRoom = this.leaveRoom(code, targetPlayerId);
+    this.clearSessionBindingForPlayer(code, targetPlayerId);
+    return nextRoom;
+  }
+
+  private clearSessionBindingForPlayer(roomCode: string, playerId: string): void {
+    const normalized = this.normalizeRoomCode(roomCode);
+    this.store.sessions.forEach((session) => {
+      if (!session.roomCode || !session.playerId) return;
+      if (this.normalizeRoomCode(session.roomCode) !== normalized) return;
+      if (session.playerId !== playerId) return;
+      session.roomCode = undefined;
+      session.playerId = undefined;
+      session.updatedAt = Date.now();
+    });
+  }
+
   addBot(code: string, actorId: string) {
     const room = this.mustGetRoom(code);
     if (room.hostPlayerId !== actorId) {

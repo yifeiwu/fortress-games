@@ -1,113 +1,148 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200" role="img" aria-label="FrankenBeasts wolf, snake body, and goat horns artwork">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200" role="img" aria-label="FrankenBeasts bear head fused to a fish body">
   <defs>
     <linearGradient id="fb-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#08160f"/>
+      <stop offset="0" stop-color="#24112f"/>
+      <stop offset="0.52" stop-color="#0f3f46"/>
       <stop offset="1" stop-color="#020617"/>
     </linearGradient>
-    <radialGradient id="fb-glow" cx="0.5" cy="0.5" r="0.6">
-      <stop offset="0" stop-color="#34d399" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    <radialGradient id="fb-glow" cx="0.52" cy="0.48" r="0.7">
+      <stop offset="0" stop-color="#f9a8d4" stop-opacity="0.35"/>
+      <stop offset="0.48" stop-color="#22d3ee" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="fb-fur" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#d1d5db"/>
-      <stop offset="1" stop-color="#4b5563"/>
+    <linearGradient id="fb-body" x1="0" y1="0" x2="1" y2="0.7">
+      <stop offset="0" stop-color="#84cc16"/>
+      <stop offset="0.36" stop-color="#22d3ee"/>
+      <stop offset="0.72" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
     </linearGradient>
-    <linearGradient id="fb-horn" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f5f5f4"/>
-      <stop offset="1" stop-color="#a8a29e"/>
+    <linearGradient id="fb-belly" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecfeff"/>
+      <stop offset="1" stop-color="#7dd3fc"/>
     </linearGradient>
-    <linearGradient id="fb-snake" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#22c55e"/>
-      <stop offset="0.5" stop-color="#16a34a"/>
-      <stop offset="1" stop-color="#14532d"/>
+    <linearGradient id="fb-fur" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="0.48" stop-color="#b45309"/>
+      <stop offset="1" stop-color="#78350f"/>
     </linearGradient>
+    <linearGradient id="fb-fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0abfc"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="fb-tail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bae6fd"/>
+      <stop offset="0.52" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="fb-shadow" x="-20%" y="-25%" width="145%" height="155%">
+      <feDropShadow dx="0" dy="9" stdDeviation="5" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <pattern id="fb-hatch" width="14" height="14" patternUnits="userSpaceOnUse">
+      <path d="M1 13 L13 1" stroke="#ecfeff" stroke-opacity="0.09" stroke-width="2"/>
+    </pattern>
   </defs>
 
   <rect width="400" height="200" fill="url(#fb-bg)"/>
   <rect width="400" height="200" fill="url(#fb-glow)"/>
+  <rect width="400" height="200" fill="url(#fb-hatch)" opacity="0.5"/>
 
-  <!-- electric arcs -->
-  <g stroke="#a7f3d0" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8">
-    <path d="M60 50 l14 12 -10 10 16 14"/>
-    <path d="M340 46 l-14 12 10 10 -16 14"/>
+  <g fill="none" stroke="#f9a8d4" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.22" stroke-width="5">
+    <path d="M33 52 C64 24,103 37,105 76"/>
+    <path d="M363 49 C331 29,292 43,291 82"/>
+    <path d="M52 158 C100 137,150 146,198 165 C242 183,289 170,346 145"/>
   </g>
 
-  <!-- snake body -->
-  <g transform="translate(200 118)">
-    <path
-      d="M-140 36
-         C-110 14,-76 18,-46 34
-         C-20 48,6 44,28 30
-         C60 10,100 14,130 34
-         C146 44,146 64,130 74
-         C104 90,72 90,40 78
-         C10 66,-16 68,-48 84
-         C-82 100,-118 94,-140 76
-         C-156 64,-156 46,-140 36 Z"
-      fill="url(#fb-snake)"
-      stroke="#14532d"
-      stroke-width="3"
-    />
-    <path d="M-126 60 C-84 40,-28 44,20 60 C70 78,112 74,132 58" fill="none" stroke="#86efac" stroke-opacity="0.45" stroke-width="3"/>
-    <g fill="#14532d" opacity="0.5">
-      <circle cx="-88" cy="62" r="4"/>
-      <circle cx="-52" cy="58" r="4"/>
-      <circle cx="-14" cy="62" r="4"/>
-      <circle cx="24" cy="66" r="4"/>
-      <circle cx="62" cy="62" r="4"/>
-      <circle cx="98" cy="58" r="4"/>
+  <ellipse cx="207" cy="177" rx="145" ry="14" fill="#000000" opacity="0.34"/>
+
+  <g transform="translate(196 99)" filter="url(#fb-shadow)">
+    <path d="M-52 -15 C-4 -53,88 -51,148 -20 C188 1,190 43,154 68 C103 103,20 99,-40 63 C-78 40,-83 10,-52 -15 Z"
+      fill="#061826" stroke="#111827" stroke-linejoin="round" stroke-width="7"/>
+    <path d="M-48 -18 C0 -51,87 -47,145 -17 C181 2,183 38,150 61 C102 94,24 90,-35 56 C-71 35,-76 8,-48 -18 Z"
+      fill="url(#fb-body)" stroke="#111827" stroke-linejoin="round" stroke-width="3.5"/>
+    <path d="M-38 33 C9 60,87 67,141 43 C121 78,40 86,-27 55 C-49 45,-62 33,-65 22 C-56 26,-48 30,-38 33 Z"
+      fill="url(#fb-belly)" opacity="0.84"/>
+
+    <g stroke="#ecfeff" stroke-linecap="round" stroke-width="3" fill="none" opacity="0.84">
+      <path d="M-12 -12 c11 8,11 19,0 27"/>
+      <path d="M15 -19 c13 10,13 27,0 38"/>
+      <path d="M44 -20 c14 12,14 31,0 43"/>
+      <path d="M75 -14 c14 12,14 28,0 39"/>
+      <path d="M104 -3 c12 10,12 22,0 32"/>
     </g>
-  </g>
-
-  <!-- wolf head + goat horns -->
-  <g transform="translate(200 88)">
-    <!-- left horn -->
-    <path d="M-70 -22 C-112 -54,-104 -92,-66 -104 C-86 -78,-84 -54,-56 -34" fill="none" stroke="url(#fb-horn)" stroke-width="10" stroke-linecap="round"/>
-    <path d="M-94 -74 C-82 -72,-72 -66,-64 -56" fill="none" stroke="#78716c" stroke-width="2" stroke-linecap="round"/>
-    <path d="M-100 -88 C-88 -86,-78 -80,-70 -70" fill="none" stroke="#78716c" stroke-width="2" stroke-linecap="round"/>
-    <!-- right horn -->
-    <path d="M70 -22 C112 -54,104 -92,66 -104 C86 -78,84 -54,56 -34" fill="none" stroke="url(#fb-horn)" stroke-width="10" stroke-linecap="round"/>
-    <path d="M94 -74 C82 -72,72 -66,64 -56" fill="none" stroke="#78716c" stroke-width="2" stroke-linecap="round"/>
-    <path d="M100 -88 C88 -86,78 -80,70 -70" fill="none" stroke="#78716c" stroke-width="2" stroke-linecap="round"/>
-
-    <!-- ears -->
-    <path d="M-58 -44 L-40 -76 L-20 -40 Z" fill="#6b7280" stroke="#1f2937" stroke-width="3"/>
-    <path d="M58 -44 L40 -76 L20 -40 Z" fill="#6b7280" stroke="#1f2937" stroke-width="3"/>
-    <path d="M-44 -46 L-38 -60 L-30 -44 Z" fill="#fca5a5" opacity="0.6"/>
-    <path d="M44 -46 L38 -60 L30 -44 Z" fill="#fca5a5" opacity="0.6"/>
-
-    <!-- head -->
-    <ellipse cx="0" cy="-6" rx="52" ry="44" fill="url(#fb-fur)" stroke="#1f2937" stroke-width="3"/>
-    <!-- muzzle -->
-    <ellipse cx="0" cy="16" rx="30" ry="20" fill="#d1d5db" stroke="#4b5563" stroke-width="2"/>
-    <polygon points="0,8 -8,16 8,16" fill="#111827"/>
-
-    <!-- eyes -->
-    <ellipse cx="-18" cy="-10" rx="8" ry="9" fill="#111827"/>
-    <ellipse cx="18" cy="-10" rx="8" ry="9" fill="#111827"/>
-    <circle cx="-18" cy="-12" r="3" fill="#34d399"/>
-    <circle cx="18" cy="-12" r="3" fill="#34d399"/>
-
-    <!-- stitches -->
-    <g stroke="#14532d" stroke-width="3" stroke-linecap="round">
-      <path d="M-8 -26 L16 -34"/>
-      <path d="M-30 10 L-8 18"/>
-      <path d="M8 26 L30 18"/>
-    </g>
-    <g stroke="#14532d" stroke-width="2" stroke-linecap="round">
-      <path d="M-4 -28 L-2 -22"/>
-      <path d="M4 -30 L6 -24"/>
-      <path d="M12 -32 L14 -26"/>
-      <path d="M-24 12 L-20 8"/>
-      <path d="M-16 16 L-12 12"/>
-      <path d="M16 24 L20 20"/>
-      <path d="M24 20 L28 16"/>
+    <g fill="#0f766e" opacity="0.78">
+      <circle cx="2" cy="30" r="3.6"/>
+      <circle cx="31" cy="9" r="3.9"/>
+      <circle cx="57" cy="44" r="3.4"/>
+      <circle cx="86" cy="14" r="3.6"/>
+      <circle cx="117" cy="39" r="3.3"/>
     </g>
 
-    <!-- fangs -->
-    <g fill="#ecfdf5">
-      <path d="M-14 26 l6 10 6 -10 z"/>
-      <path d="M2 26 l6 10 6 -10 z"/>
+    <path d="M124 -13 C156 -43,191 -47,208 -28 C189 -15,178 4,178 28 C162 11,144 -3,124 -13 Z"
+      fill="url(#fb-tail)" stroke="#111827" stroke-linejoin="round" stroke-width="3.5"/>
+    <path d="M130 54 C161 86,197 88,212 68 C193 57,180 41,178 24 C162 39,145 49,130 54 Z"
+      fill="url(#fb-tail)" stroke="#111827" stroke-linejoin="round" stroke-width="3.5"/>
+    <path d="M168 23 C187 11,203 17,211 35 C198 48,182 46,168 32 Z"
+      fill="#7dd3fc" stroke="#111827" stroke-linejoin="round" stroke-width="3"/>
+    <g stroke="#ecfeff" stroke-linecap="round" stroke-width="2.3" fill="none" opacity="0.78">
+      <path d="M151 -20 C169 -28,188 -31,203 -25"/>
+      <path d="M153 66 C172 76,191 76,206 67"/>
+      <path d="M180 29 C190 27,201 31,207 38"/>
+    </g>
+
+    <path d="M30 -33 C45 -71,84 -82,111 -55 C82 -51,63 -33,56 -7 Z"
+      fill="url(#fb-fin)" stroke="#111827" stroke-linejoin="round" stroke-width="3"/>
+    <path d="M27 54 C57 60,80 78,87 101 C57 104,33 83,22 61 Z"
+      fill="url(#fb-fin)" stroke="#111827" stroke-linejoin="round" stroke-width="3"/>
+
+    <g transform="translate(-88 -6)">
+      <path d="M-43 -34 C-28 -60,-1 -72,19 -58 C38 -75,68 -57,60 -29 C88 -18,92 22,70 49 C44 82,-8 80,-45 51 C-75 28,-76 -10,-43 -34 Z"
+        fill="#111827" opacity="0.42"/>
+      <circle cx="-36" cy="-34" r="23" fill="url(#fb-fur)" stroke="#111827" stroke-width="4"/>
+      <circle cx="42" cy="-38" r="22" fill="url(#fb-fur)" stroke="#111827" stroke-width="4"/>
+      <circle cx="-36" cy="-34" r="10" fill="#fed7aa" stroke="#111827" stroke-width="2.4"/>
+      <circle cx="42" cy="-38" r="9" fill="#fed7aa" stroke="#111827" stroke-width="2.4"/>
+      <path d="M-55 -29 C-32 -66,30 -70,63 -33 C86 -8,81 35,50 58 C17 82,-39 68,-59 33 C-73 9,-70 -10,-55 -29 Z"
+        fill="url(#fb-fur)" stroke="#111827" stroke-linejoin="round" stroke-width="4"/>
+      <path d="M-23 16 C-12 -7,24 -13,43 6 C59 22,45 47,16 50 C-14 53,-34 38,-23 16 Z"
+        fill="#fed7aa" stroke="#111827" stroke-linejoin="round" stroke-width="3"/>
+      <ellipse cx="-17" cy="-13" rx="12" ry="13" fill="#fff7ed" stroke="#111827" stroke-width="2.4"/>
+      <ellipse cx="37" cy="-13" rx="12" ry="13" fill="#fff7ed" stroke="#111827" stroke-width="2.4"/>
+      <circle cx="-12" cy="-12" r="5" fill="#111827"/>
+      <circle cx="42" cy="-12" r="5" fill="#111827"/>
+      <circle cx="-10" cy="-15" r="1.6" fill="#fef3c7"/>
+      <circle cx="44" cy="-15" r="1.6" fill="#fef3c7"/>
+      <path d="M-30 -29 C-17 -36,-5 -34,5 -25" fill="none" stroke="#111827" stroke-linecap="round" stroke-width="3.2"/>
+      <path d="M25 -26 C38 -35,51 -33,59 -23" fill="none" stroke="#111827" stroke-linecap="round" stroke-width="3.2"/>
+      <path d="M11 8 C22 0,34 4,39 12 C34 23,20 24,11 8 Z" fill="#111827" stroke="#111827" stroke-linejoin="round" stroke-width="1.5"/>
+      <path d="M25 21 C18 31,5 29,-1 20" fill="none" stroke="#7c2d12" stroke-linecap="round" stroke-width="2.4"/>
+      <path d="M26 21 C31 31,44 30,51 21" fill="none" stroke="#7c2d12" stroke-linecap="round" stroke-width="2.4"/>
+      <g fill="none" stroke="#fde68a" stroke-linecap="round" stroke-opacity="0.75" stroke-width="2.6">
+        <path d="M-48 10 C-36 7,-24 9,-13 15"/>
+        <path d="M-49 24 C-35 20,-22 22,-10 29"/>
+        <path d="M69 9 C58 7,48 10,39 16"/>
+        <path d="M70 23 C58 20,47 22,37 29"/>
+      </g>
+    </g>
+
+    <path d="M-55 -5 C-65 9,-67 27,-59 43" fill="none" stroke="#111827" stroke-linecap="round" stroke-width="3.5"/>
+    <g fill="none" stroke-linecap="round" stroke-width="3">
+      <path d="M-59 4 l9 -8" stroke="#fef3c7"/>
+      <path d="M-62 16 l10 -8" stroke="#7dd3fc"/>
+      <path d="M-61 29 l10 -8" stroke="#fef3c7"/>
+      <path d="M-56 40 l8 -8" stroke="#7dd3fc"/>
+    </g>
+
+    <g fill="url(#fb-fur)" stroke="#111827" stroke-linejoin="round" stroke-width="3">
+      <path d="M-102 39 C-124 34,-136 47,-130 65 C-112 72,-93 63,-88 46 Z"/>
+      <path d="M-35 63 C-53 68,-61 84,-51 97 C-33 94,-21 82,-25 65 Z"/>
+    </g>
+    <g stroke="#fef3c7" stroke-linecap="round" stroke-width="2.2" fill="none" opacity="0.88">
+      <path d="M-123 61 l9 -6"/>
+      <path d="M-116 66 l10 -7"/>
+      <path d="M-108 68 l8 -7"/>
+      <path d="M-46 90 l7 -10"/>
+      <path d="M-38 94 l7 -10"/>
+      <path d="M-30 91 l5 -10"/>
     </g>
   </g>
 </svg>

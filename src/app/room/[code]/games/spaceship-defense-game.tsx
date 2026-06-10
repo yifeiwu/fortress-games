@@ -544,8 +544,8 @@ function AsteroidShape({ className = "", style }: { className?: string; style?: 
   );
 }
 
-// Side-view player ship with a shield bubble (opacity scales with shields) and a
-// hull tint that shifts amber/red as integrity drops.
+// Player ship sprite: a flying-saucer silhouette with a shield bubble (opacity
+// scales with shields) and a hull tint that shifts amber/red as integrity drops.
 function ShipSprite({ shieldRatio, hullRatio, reducedMotion, scale = 1 }: { shieldRatio: number; hullRatio: number; reducedMotion: boolean; scale?: number }) {
   const hullColor = hullRatio <= 0.3 ? "#f87171" : hullRatio <= 0.6 ? "#fbbf24" : "#67e8f9";
   return (
@@ -557,12 +557,27 @@ function ShipSprite({ shieldRatio, hullRatio, reducedMotion, scale = 1 }: { shie
           aria-hidden="true"
         />
       ) : null}
-      <svg viewBox="0 0 80 48" width={78 * scale} height={47 * scale} className="relative drop-shadow-[0_0_10px_rgba(34,211,238,0.45)]" aria-hidden="true">
-        <path d="M11 24 -3 18 3 24 -3 30Z" fill="#fb923c" className={reducedMotion ? "" : "animate-pulse"} />
-        <path d="M8 24 Q34 9 64 17 Q77 21 64 31 Q34 39 8 24Z" fill={hullColor} stroke="#0e7490" strokeWidth="1.5" />
-        <path d="M30 17 37 4 46 15Z" fill="#22d3ee" opacity="0.85" />
-        <path d="M30 31 37 44 46 33Z" fill="#22d3ee" opacity="0.85" />
-        <circle cx="55" cy="24" r="3.6" fill="#0c4a6e" stroke="#e0f2fe" strokeWidth="1" />
+      <svg viewBox="0 0 84 52" width={82 * scale} height={50 * scale} className="relative drop-shadow-[0_0_10px_rgba(34,211,238,0.45)]" aria-hidden="true">
+        {/* Rear ion wake */}
+        <path d="M6 27 0 23 0 27 0 31Z" fill="#67e8f9" opacity="0.9" className={reducedMotion ? "" : "animate-pulse"} />
+        {/* Saucer base hull */}
+        <ellipse cx="42" cy="29" rx="34" ry="11.5" fill={hullColor} stroke="#0e7490" strokeWidth="1.5" />
+        {/* Dark underside band */}
+        <path d="M13 29c6.5 5 17 8 29 8s22.5-3 29-8" fill="none" stroke="#155e75" strokeWidth="1.5" opacity="0.7" />
+        {/* Upper dome */}
+        <ellipse cx="42" cy="23" rx="17" ry="8.5" fill="#22d3ee" stroke="#0e7490" strokeWidth="1.2" opacity="0.92" />
+        {/* Cockpit lights */}
+        <circle cx="35" cy="23" r="1.9" fill="#e0f2fe" opacity="0.9" />
+        <circle cx="42" cy="21.8" r="2.1" fill="#e0f2fe" opacity="0.95" />
+        <circle cx="49" cy="23" r="1.9" fill="#e0f2fe" opacity="0.9" />
+        {/* Rim lights */}
+        <g fill="#a5f3fc" opacity="0.85">
+          <circle cx="20" cy="31.5" r="1.4" />
+          <circle cx="30" cy="34" r="1.2" />
+          <circle cx="42" cy="35" r="1.3" />
+          <circle cx="54" cy="34" r="1.2" />
+          <circle cx="64" cy="31.5" r="1.4" />
+        </g>
       </svg>
     </div>
   );
@@ -737,12 +752,19 @@ const APPROACH_ZONES = [
 function placeThreats(threats: SpaceshipThreat[]): PlacedThreat[] {
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
   const count = threats.length;
+  // Reserve the top-right HUD zone for the threat indicator so incoming ships
+  // never hide behind it.
+  const inThreatMeterZone = (x: number, y: number) => x >= 74 && y <= 28;
   return threats.map((threat, index) => {
     const zone = clamp(threat.attacksInTurns, 1, 3);
     const center = 31.6 + (zone - 1) * 27.3;
     const x = clamp(center + (hash01(threat.id) - 0.5) * 16, 20, 98);
     const slot = count > 1 ? index / (count - 1) : 0.5;
-    const y = clamp(9 + slot * 80 + (hash01(`${threat.id}:y`) - 0.5) * 16, 6, 94);
+    let y = clamp(9 + slot * 80 + (hash01(`${threat.id}:y`) - 0.5) * 16, 6, 94);
+    if (inThreatMeterZone(x, y)) {
+      // Reposition into the next clear band while keeping deterministic spacing.
+      y = clamp(30 + slot * 62 + (hash01(`${threat.id}:meter-avoid`) - 0.5) * 10, 30, 94);
+    }
     return { threat, x, y };
   });
 }

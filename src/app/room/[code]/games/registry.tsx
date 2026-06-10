@@ -45,6 +45,7 @@ type RoomControlAction =
   | { action: "start_game" }
   | { action: "restart_game" }
   | { action: "add_bot" }
+  | { action: "kick_player"; targetPlayerId: string }
   | { action: "heartbeat" };
 
 export type RoomActionPayload = ClientGameAction | RoomControlAction;
