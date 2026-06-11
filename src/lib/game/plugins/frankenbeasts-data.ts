@@ -134,26 +134,6 @@ const HAWK_HEAD: FBPart = {
   passives: [{ kind: "damage_reduction", amount: 3 }]
 };
 
-const FERAL_HEAD: FBPart = {
-  id: "feral_head",
-  slot: "head",
-  name: "Feral Head",
-  hp: 7,
-  abilities: [
-    {
-      id: "feral_lunge",
-      name: "Feral Lunge",
-      description: "Deal 5 damage, apply 2 poison/turn for 2 turns to the opponent, and 2 poison/turn for 3 turns to yourself.",
-      effects: [
-        { kind: "damage", amount: 5 },
-        { kind: "poison_opponent", turns: 2 },
-        { kind: "poison_self", turns: 3 }
-      ]
-    }
-  ],
-  passives: []
-};
-
 const GOLDFISH_HEAD: FBPart = {
   id: "goldfish_head",
   slot: "head",
@@ -165,22 +145,6 @@ const GOLDFISH_HEAD: FBPart = {
       name: "Bubble",
       description: "Deal 1 damage. It's trying its best.",
       effects: [{ kind: "damage", amount: 1 }]
-    }
-  ],
-  passives: []
-};
-
-const RUBBER_CHICKEN_HEAD: FBPart = {
-  id: "rubber_chicken_head",
-  slot: "head",
-  name: "Rubber Chicken Head",
-  hp: 5,
-  abilities: [
-    {
-      id: "squawk",
-      name: "Squawk",
-      description: "Deal 2 damage to yourself. Completely harmless to the opponent.",
-      effects: [{ kind: "damage_self", amount: 2 }]
     }
   ],
   passives: []
@@ -318,15 +282,6 @@ const RABID_BODY: FBPart = {
   passives: []
 };
 
-const WET_CARDBOARD_BODY: FBPart = {
-  id: "wet_cardboard_body",
-  slot: "body",
-  name: "Wet Cardboard Body",
-  hp: 3,
-  abilities: [],
-  passives: [{ kind: "damage_amplify", amount: 1 }]
-};
-
 const PILLOW_BODY: FBPart = {
   id: "pillow_body",
   slot: "body",
@@ -446,22 +401,6 @@ const RAZOR_TAIL: FBPart = {
   passives: []
 };
 
-const LIMP_NOODLE_TAIL: FBPart = {
-  id: "limp_noodle_tail",
-  slot: "tail",
-  name: "Limp Noodle Tail",
-  hp: 3,
-  abilities: [
-    {
-      id: "flop",
-      name: "Flop",
-      description: "Deal 1 damage. Technically an attack.",
-      effects: [{ kind: "damage", amount: 1 }]
-    }
-  ],
-  passives: []
-};
-
 const DECORATIVE_TAIL: FBPart = {
   id: "decorative_tail",
   slot: "tail",
@@ -505,10 +444,8 @@ export const FB_PARTS: FBPart[] = [
   LEECH_HEAD,
   VIPER_HEAD,
   HAWK_HEAD,
-  FERAL_HEAD,
   DRAGON_HEAD,
   GOLDFISH_HEAD,
-  RUBBER_CHICKEN_HEAD,
   CRAB_SHELL,
   TOAD_BODY,
   THORNED_BODY,
@@ -518,7 +455,6 @@ export const FB_PARTS: FBPart[] = [
   CURSED_BODY,
   RABID_BODY,
   SLIME_BODY,
-  WET_CARDBOARD_BODY,
   PILLOW_BODY,
   FLUFFY_TAIL,
   SPIKE_TAIL,
@@ -526,7 +462,6 @@ export const FB_PARTS: FBPart[] = [
   CLUB_TAIL,
   RAZOR_TAIL,
   SCORPION_TAIL,
-  LIMP_NOODLE_TAIL,
   DECORATIVE_TAIL
 ];
 

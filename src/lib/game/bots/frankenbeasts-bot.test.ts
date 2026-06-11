@@ -47,10 +47,10 @@ test("bot prefers a lethal damage ability when available", () => {
   } satisfies FBCombatStatus;
   const defender = {
     headId: "goldfish_head",
-    bodyId: "wet_cardboard_body",
+    bodyId: "pillow_body",
     tailId: "decorative_tail",
     hp: 5,
-    maxHp: 11,
+    maxHp: 14,
     poisonDamage: 0,
     poisonTurns: 0,
     damageBuff: { bonus: 0, turnsRemaining: 0 }

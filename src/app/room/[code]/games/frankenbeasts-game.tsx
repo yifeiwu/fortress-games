@@ -200,7 +200,32 @@ function BeastPortrait({ headId, bodyId, tailId, size = "md" }: { headId: string
   );
 }
 
-function PartCard({
+function passiveDescription(passive: FBPart["passives"][number]): string {
+  switch (passive.kind) {
+    case "damage_reduction":
+      return `−${passive.amount} incoming dmg`;
+    case "damage_amplify":
+      return `+${passive.amount} incoming dmg (ouch)`;
+    case "heal_per_round":
+      return `+${passive.amount} HP/round`;
+    case "retaliation":
+      return `${passive.amount} dmg when hit`;
+    case "death_march":
+      return `${passive.amount} dmg/round to opponent`;
+    case "poison_retaliation":
+      return `Poisons attacker for ${passive.turns} turns`;
+    case "self_poison":
+      return `Self-poison for ${passive.turns} turns`;
+  }
+}
+
+function partShortLabel(part: FBPart): string {
+  if (part.abilities.length > 0) return part.abilities.map((ability) => ability.name).join(" + ");
+  if (part.passives.length > 0) return part.passives.map(passiveDescription).join(" + ");
+  return "No abilities";
+}
+
+function CompactPartTile({
   part,
   selected,
   onClick
@@ -213,51 +238,56 @@ function PartCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border p-3 text-left transition-all duration-150 ${
+      className={`rounded-xl border p-2 text-left transition-all duration-150 ${
         selected
-          ? "border-cyan-400 bg-cyan-950/60 ring-2 ring-cyan-400/50"
+          ? "border-cyan-400 bg-cyan-950/70 ring-2 ring-cyan-400/50"
           : "border-slate-600/50 bg-slate-800/60 hover:border-slate-400/60 hover:bg-slate-700/60"
       }`}
     >
-      <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          <PartImage
-            partId={part.id}
-            slot={part.slot}
-            imgClassName="h-16 w-16 rounded-lg object-contain bg-slate-700/50"
-            fallbackClassName="flex h-16 w-16 items-center justify-center rounded-lg bg-slate-700 text-3xl"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-100">{part.name}</span>
-            <span className="rounded-full bg-rose-900/50 px-2 py-0.5 text-xs font-semibold text-rose-300">
+      <div className="flex items-center gap-2">
+        <PartImage
+          partId={part.id}
+          slot={part.slot}
+          imgClassName="h-12 w-12 shrink-0 rounded-lg object-contain bg-slate-700/50"
+          fallbackClassName="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-2xl"
+        />
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-bold text-slate-100">{part.name}</span>
+            <span className="shrink-0 rounded-full bg-rose-900/50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-300">
               {part.hp} HP
             </span>
           </div>
-          {part.passives.map((p, i) => (
-            <p key={i} className="mt-0.5 text-xs text-indigo-300">
-              <span className="font-semibold">Passive:</span>{" "}
-              {p.kind === "damage_reduction" && `−${p.amount} incoming dmg`}
-              {p.kind === "damage_amplify" && `+${p.amount} incoming dmg (ouch)`}
-              {p.kind === "heal_per_round" && `+${p.amount} HP/round`}
-              {p.kind === "retaliation" && `${p.amount} dmg when hit`}
-              {p.kind === "death_march" && `${p.amount} dmg/round to opponent`}
-              {p.kind === "poison_retaliation" && `Poison Skin: poisons attacker (2/turn for ${p.turns} turns) when hit`}
-              {p.kind === "self_poison" && `Self-poison for ${p.turns} turns on assembly`}
-            </p>
-          ))}
-          {part.abilities.map((a) => (
-            <p key={a.id} className="mt-0.5 text-xs text-slate-400">
-              <span className="font-semibold text-slate-300">{a.name}:</span> {a.description}
-            </p>
-          ))}
-          {part.abilities.length === 0 && part.passives.length === 0 && (
-            <p className="mt-0.5 text-xs text-slate-500 italic">No abilities.</p>
-          )}
+          <p className="text-[11px] leading-snug text-slate-400">{partShortLabel(part)}</p>
         </div>
       </div>
     </button>
+  );
+}
+
+function PartDetails({ part }: { part: FBPart }) {
+  return (
+    <div className="rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-xs font-bold text-slate-200">{part.name}</p>
+        <span className="shrink-0 rounded-full bg-rose-900/50 px-2 py-0.5 text-[11px] font-semibold text-rose-300">
+          {part.hp} HP
+        </span>
+      </div>
+      {part.passives.map((passive, i) => (
+        <p key={i} className="mt-1 text-[11px] leading-snug text-indigo-300">
+          <span className="font-semibold">Passive:</span> {passiveDescription(passive)}
+        </p>
+      ))}
+      {part.abilities.map((ability) => (
+        <p key={ability.id} className="mt-1 text-[11px] leading-snug text-slate-400">
+          <span className="font-semibold text-slate-300">{ability.name}:</span> {ability.description}
+        </p>
+      ))}
+      {part.abilities.length === 0 && part.passives.length === 0 && (
+        <p className="mt-1 text-[11px] italic text-slate-500">No abilities.</p>
+      )}
+    </div>
   );
 }
 
@@ -333,6 +363,22 @@ function PickPhase({
   const isLockedIn = myPick?.lockedIn ?? lockedIn;
   const allChosen = Boolean(headId && bodyId && tailId);
   const selectedAbilities = headId && bodyId && tailId ? getBeastAbilities(headId, bodyId, tailId) : [];
+  const selectedParts = [headId, bodyId, tailId]
+    .map((id) => (id ? FB_PARTS_BY_ID[id] : undefined))
+    .filter((part): part is FBPart => Boolean(part));
+  const selectedHp = selectedParts.reduce((sum, part) => sum + part.hp, 0);
+  const selectedArmor = selectedParts.reduce(
+    (sum, part) =>
+      sum + part.passives.reduce((partSum, passive) => (passive.kind === "damage_reduction" ? partSum + passive.amount : partSum), 0),
+    0
+  );
+  const selectedVulnerability = selectedParts.reduce(
+    (sum, part) =>
+      sum + part.passives.reduce((partSum, passive) => (passive.kind === "damage_amplify" ? partSum + passive.amount : partSum), 0),
+    0
+  );
+  const selectedAbilityCount = selectedParts.reduce((sum, part) => sum + part.abilities.length, 0);
+  const selectedPassiveCount = selectedParts.reduce((sum, part) => sum + part.passives.length, 0);
   const totalHp =
     headId && bodyId && tailId
       ? (FB_PARTS_BY_ID[headId]?.hp ?? 0) + (FB_PARTS_BY_ID[bodyId]?.hp ?? 0) + (FB_PARTS_BY_ID[tailId]?.hp ?? 0)
@@ -401,9 +447,9 @@ function PickPhase({
               <h3 className="text-center text-xs font-bold uppercase tracking-widest text-slate-400">
                 {slot}
               </h3>
-              <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 lg:grid-cols-2">
                 {parts.map((part) => (
-                  <PartCard
+                  <CompactPartTile
                     key={part.id}
                     part={part}
                     selected={selected === part.id}
@@ -419,36 +465,73 @@ function PickPhase({
       {/* Beast preview + lock in */}
       <div className="flex flex-col gap-3 rounded-xl bg-slate-800/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-start gap-4">
-          {headId && bodyId && tailId ? (
+          {selectedParts.length > 0 ? (
             <>
-              <BeastPortrait headId={headId} bodyId={bodyId} tailId={tailId} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-200">
-                  {beastLabel(headId, bodyId, tailId)}
-                </p>
-                <p className="text-xs text-slate-400">
-                  Total HP:{" "}
-                  <span className="font-bold text-rose-300">
-                    {totalHp}
-                  </span>
-                  {totalArmor > 0 && (
-                    <>
-                      {" · "}Armor:{" "}
-                      <span className="font-bold text-sky-300">{totalArmor}</span>
-                    </>
-                  )}
-                </p>
-                <div className="mt-2">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Final Abilities</p>
-                  <div className="mt-1 grid gap-1.5 sm:grid-cols-2">
-                    {selectedAbilities.map((ability) => (
-                      <div key={ability.id} className="rounded-lg border border-slate-700/60 bg-slate-900/60 px-2 py-1.5">
-                        <p className="text-xs font-semibold text-cyan-200">{ability.name}</p>
-                        <p className="text-[11px] leading-snug text-slate-400">{ability.description}</p>
-                      </div>
-                    ))}
-                  </div>
+              {headId && bodyId && tailId ? (
+                <BeastPortrait headId={headId} bodyId={bodyId} tailId={tailId} size="sm" />
+              ) : (
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-900/70 text-slate-500">
+                  <SlotIcon slot="body" className="h-8 w-8" />
                 </div>
+              )}
+              <div className="min-w-0 flex-1">
+                {headId && bodyId && tailId ? (
+                  <>
+                    <p className="text-sm font-semibold text-slate-200">
+                      {beastLabel(headId, bodyId, tailId)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-slate-200">Assembly in progress</p>
+                    <p className="text-xs text-slate-400">
+                      {selectedParts.length}/3 parts selected. Pick one head, body, and tail to finish your beast.
+                    </p>
+                  </>
+                )}
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-semibold">
+                  <span className="rounded-full bg-rose-900/50 px-2 py-0.5 text-rose-300">
+                    {headId && bodyId && tailId ? totalHp : selectedHp} HP
+                  </span>
+                  {(headId && bodyId && tailId ? totalArmor : selectedArmor) > 0 && (
+                    <span className="rounded-full bg-sky-900/50 px-2 py-0.5 text-sky-300">
+                      {(headId && bodyId && tailId ? totalArmor : selectedArmor)} armor
+                    </span>
+                  )}
+                  {selectedVulnerability > 0 && (
+                    <span className="rounded-full bg-orange-900/50 px-2 py-0.5 text-orange-300">
+                      +{selectedVulnerability} incoming dmg
+                    </span>
+                  )}
+                  {selectedAbilityCount > 0 && (
+                    <span className="rounded-full bg-cyan-900/50 px-2 py-0.5 text-cyan-300">
+                      {selectedAbilityCount} {selectedAbilityCount === 1 ? "ability" : "abilities"}
+                    </span>
+                  )}
+                  {selectedPassiveCount > 0 && (
+                    <span className="rounded-full bg-indigo-900/50 px-2 py-0.5 text-indigo-300">
+                      {selectedPassiveCount} {selectedPassiveCount === 1 ? "passive" : "passives"}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 grid gap-1.5 md:grid-cols-3">
+                  {selectedParts.map((part) => (
+                    <PartDetails key={part.id} part={part} />
+                  ))}
+                </div>
+                {headId && bodyId && tailId && selectedAbilities.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Final Abilities</p>
+                    <div className="mt-1 grid gap-1.5 sm:grid-cols-2">
+                      {selectedAbilities.map((ability) => (
+                        <div key={ability.id} className="rounded-lg border border-slate-700/60 bg-slate-900/60 px-2 py-1.5">
+                          <p className="text-xs font-semibold text-cyan-200">{ability.name}</p>
+                          <p className="text-[11px] leading-snug text-slate-400">{ability.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -909,7 +992,7 @@ function RevealPhase({ room, viewerPlayerId }: { room: Room; viewerPlayerId: str
   const deadlineAt = room.game.roundDeadlineAt;
 
   const oppId = opponentId(room, viewerPlayerId);
-  const steps = fb?.revealSteps ?? [];
+  const steps = useMemo(() => fb?.revealSteps ?? [], [fb?.revealSteps]);
   const totalSteps = steps.length;
 
   // Play the round's events one at a time, paced to land on the final frame a

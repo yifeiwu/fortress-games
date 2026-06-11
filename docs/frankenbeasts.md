@@ -64,7 +64,7 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
 - `roarBonus` applies only while your Roar buff is active.
 - `targetReduction` is the sum of the defender's damage-reduction passives
   (Cursed Body contributes a flat +4 armor).
-- `targetAmplify` is added by Wet Cardboard Body (it takes *extra* damage).
+- `targetAmplify` is added by damage-amplification passives, if any.
 
 ### Win conditions
 
@@ -100,9 +100,7 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
 | Leech Head | 10 | **Drain Bite** — 5 dmg, heal 3 | — |
 | Viper Head | 6 | **Venom Bite** — 3 dmg + 2 poison/turn (4t) | — |
 | Hawk Head | 7 | **Peck** — 4 dmg | −3 incoming dmg |
-| Feral Head | 7 | **Feral Lunge** — 5 dmg, poison opp (2/turn, 2t), poison self (2/turn, 3t) | — |
 | Dragon Head | 5 | **Fire Breath** — 9 dmg; **Terrify** — block the opponent's attack if it deals ≤5 | — |
-| Rubber Chicken Head | 5 | **Squawk** — 2 dmg to *yourself* (harmless to the opponent) | — |
 | Goldfish Head | 4 | **Bubble** — 1 dmg | — |
 
 ### Bodies
@@ -119,7 +117,6 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
 | Rabid Body | 6 | **Rabid Strike** — 13 dmg + poison self (2/turn, 2t) | — |
 | Slime Body | 6 | **Regenerate** — heal 6; **Acid Splash** — 4 dmg | — |
 | Pillow Body | 6 | **Nap** — heal 1 | — |
-| Wet Cardboard Body | 3 | — | +1 incoming dmg (ouch) |
 
 ### Tails
 
@@ -132,7 +129,6 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
 | Razor Tail | 7 | **Slash** — 6 dmg; **Trip** — block & reflect the opponent's attack if it deals >6 | — |
 | Scorpion Tail | 6 | **Sting** — 2 dmg + 2 poison/turn (2t); **Tail Whip** — 5 dmg | — |
 | Decorative Tail | 4 | — | — |
-| Limp Noodle Tail | 3 | **Flop** — 1 dmg | — |
 
 ---
 
@@ -141,7 +137,7 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
 - **Balance HP and offense.** A 34-HP wall (Granite + Crab + Fluffy) has no
   attacks and wins only on the round-limit HP tiebreak — fun, but it can't close
   out a game. Pair beefy parts with at least one real attack.
-- **Poison wins slow games.** Viper/Scorpion/Feral poison ignores armor and ticks
+- **Poison wins slow games.** Viper/Scorpion poison ignores armor and ticks
   every round. Against high-reduction tanks, poison is often your best damage.
 - **Toad Body's Poison Skin punishes direct attackers** by poisoning them back (2/turn, 2t) every time they land a direct hit. It's a deterrent against physical damage dealers, not a poison counter.
 - **Terrify vs. Trip — read the threat.** Terrify (Dragon Head) shuts down small
@@ -155,7 +151,7 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
   you survive to land the buffed hits over the following 3 turns.
 - **Cursed Body is a clock.** The +4 armor makes you very tanky, but the
   20 damage of self-poison it deals on assembly means you must win quickly.
-- **Avoid Wet Cardboard / Rubber Chicken / Goldfish / Limp Noodle** unless you're
-  handicapping yourself for fun — they're deliberately terrible.
+- **Goldfish is a challenge pick.** Its weak attack is useful mostly when you want
+  to trade power for a little extra style.
 - **Direct kills beat poison kills.** If you can land the lethal blow this round,
   you win even if your beast would otherwise die to end-of-round poison.
