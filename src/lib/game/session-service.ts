@@ -137,6 +137,24 @@ class GameSessionService {
     return clone(this.sessions.getOrCreate(sessionId));
   }
 
+  /**
+   * Return the caller's session, assigning a random unique display name on
+   * first entry so players never have to pick one manually. They can still
+   * change it later via setSessionUsername.
+   */
+  async ensureSession(sessionId: string): Promise<PlayerSession> {
+    return this.withConflictRetry(async () => {
+      await this.ensureHydrated();
+      const session = this.sessions.getOrCreate(sessionId);
+      if (!session.username) {
+        session.username = this.sessions.generateUniqueUsername(sessionId);
+        session.updatedAt = Date.now();
+        await this.persistStore();
+      }
+      return clone(session);
+    });
+  }
+
   async setSessionUsername(sessionId: string, username: string): Promise<PlayerSession> {
     return this.withConflictRetry(async () => {
       await this.ensureHydrated();

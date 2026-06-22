@@ -1,6 +1,7 @@
 import { createEmptySession } from "@/lib/session";
 import type { GameStore } from "@/lib/store/game-store";
 import type { PlayerSession } from "@/lib/types";
+import { randomUsername } from "@/lib/utils/random-username";
 
 /** A username only blocks others while its session has been active this recently. */
 const ACTIVE_USERNAME_WINDOW_MS = 60 * 60 * 1000;
@@ -37,6 +38,21 @@ export class SessionDirectory {
       }
       return this.normalizeUsername(session.username).toLowerCase() === normalized;
     });
+  }
+
+  /**
+   * Pick a friendly random display name that isn't currently held by another
+   * active session. Falls back to a numeric suffix if we somehow can't find a
+   * free combination, so the caller always gets a unique name.
+   */
+  generateUniqueUsername(sessionIdToIgnore: string): string {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const candidate = randomUsername();
+      if (!this.isUsernameTaken(candidate, sessionIdToIgnore)) {
+        return this.normalizeUsername(candidate);
+      }
+    }
+    return this.normalizeUsername(`${randomUsername()} ${Math.floor(Math.random() * 10_000)}`);
   }
 
   getOrCreate(sessionId: string): PlayerSession {

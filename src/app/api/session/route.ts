@@ -16,7 +16,7 @@ function ensureSessionId(): string {
 export async function GET() {
   const service = getGameSessionService();
   const sessionId = ensureSessionId();
-  const session = await service.getSession(sessionId);
+  const session = await service.ensureSession(sessionId);
   const response = NextResponse.json({
     session: {
       username: session.username ?? null,
