@@ -212,7 +212,7 @@ function resolvePick(room: Room, state: GameState, now: number): GameState {
 
 function resolveAction(
   room: Room,
-  state: GameState,
+  roundIndex: number,
   attackerId: string,
   defenderId: string,
   action: FBRoundAction,
@@ -241,7 +241,6 @@ function resolveAction(
   let newDefender = { ...defender };
   let newLog = log;
   let defenderReceivedDirectDamage = false;
-  const roundIndex = state.roundIndex;
 
   // Records both the persistent log line and a reveal-step snapshot of combat
   // state right after this event. Reads newAttacker/newDefender lazily so the
@@ -403,12 +402,12 @@ function resolveFightRound(room: Room, state: GameState, now: number): GameState
   const action2 = fb.roundActions[p2] ?? { playerId: p2, abilityId: "pass", autoSubmitted: true };
 
   // Resolve active actions for both players simultaneously
-  const r1 = resolveAction(room, state, p1, p2, action1, action2, combatStates, log, rec);
+  const r1 = resolveAction(room, roundIndex, p1, p2, action1, action2, combatStates, log, rec);
   combatStates = r1.combatStates;
   log = r1.log;
   const p1DealtDirectDamageToP2 = r1.defenderReceivedDirectDamage;
 
-  const r2 = resolveAction(room, state, p2, p1, action2, action1, combatStates, log, rec);
+  const r2 = resolveAction(room, roundIndex, p2, p1, action2, action1, combatStates, log, rec);
   combatStates = r2.combatStates;
   log = r2.log;
   const p2DealtDirectDamageToP1 = r2.defenderReceivedDirectDamage;

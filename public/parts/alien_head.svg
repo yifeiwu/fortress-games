@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <g stroke="#0d0f16" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- neck seam column (butts against the body) -->
+    <path d="M74 30 H100 V70 H74 Z" fill="#2b2f3a" stroke="none"/>
+    <path d="M74 30 H100 M74 70 H100" fill="none"/>
+
+    <!-- ===== elongated xenomorph skull whose back sweeps down into the neck ===== -->
+    <path d="M12 48 C12 39 18 33 30 30 C44 26 60 25 74 27 C86 29 93 35 93 43 C95 52 96 62 92 70 L80 70 C74 70 70 66 66 60 C58 56 50 53 40 50 C28 49 16 52 12 48 Z" fill="#2b2f3a"/>
+    <!-- neck underside shadow (back of the head) -->
+    <path d="M67 60 C74 65 80 69 90 69 C88 70 84 70 80 70 L72 70 C68 70 67 64 67 60 Z" fill="#191c26" stroke="none"/>
+    <!-- neck rib rings arcing down the back of the head to the seam -->
+    <g fill="none" stroke="#0d0f16" stroke-width="1.1" opacity="0.7">
+      <path d="M85 45 C88 53 88 61 86 69 M77 49 C80 57 80 64 78 70 M70 55 C73 61 73 66 72 70"/>
+    </g>
+    <path d="M88 45 C91 53 91 61 89 68" fill="none" stroke="#5a5476" stroke-width="1.1" opacity="0.55"/>
+    <!-- smooth domed crown highlight -->
+    <path d="M24 34 C38 28 56 27 72 31 C81 33 87 37 90 42 C82 36 68 33 54 33 C42 33 30 35 24 40 Z" fill="#464d63" stroke="none"/>
+    <path d="M28 31 C44 26 62 26 79 31" fill="none" stroke="#5a5476" stroke-width="1.8" opacity="0.85"/>
+    <!-- biomech ridge lines sweeping back along the skull -->
+    <g fill="none" stroke="#5a5476" stroke-width="1" opacity="0.6">
+      <path d="M40 34 C52 32 64 33 80 38 M46 40 C58 39 70 40 87 44 M40 45 C52 44 64 45 80 48"/>
+    </g>
+    <!-- roof-of-mouth underside shadow -->
+    <path d="M13 49 C24 51 40 51 52 52 C46 55 32 55 20 54 C16 53 14 51 13 49 Z" fill="#191c26" stroke="none"/>
+
+    <!-- ===== jaws opened WIDE ===== -->
+    <!-- deep open maw interior -->
+    <path d="M13 49 C28 52 42 54 53 55 C50 66 36 72 21 71 C14 67 12 57 13 49 Z" fill="#0f0b16" stroke="#0d0f16" stroke-width="1.5"/>
+    <!-- throat glow deep in the maw -->
+    <path d="M23 54 C35 56 46 58 52 58 C49 64 39 67 30 66 C24 64 22 59 23 54 Z" fill="#241120" stroke="none"/>
+
+    <!-- dropped lower mandible -->
+    <path d="M53 55 C46 66 32 75 15 75 C23 72 27 68 31 64 C37 58 45 56 53 55 Z" fill="#20242e"/>
+
+    <!-- upper fangs hanging from the roof -->
+    <g fill="#e2ddce" stroke="#0d0f16" stroke-width="1">
+      <path d="M18 50 L15 60 L23 51 Z"/>
+      <path d="M27 51 L25 62 L32 52 Z"/>
+      <path d="M36 52 L34 62 L41 53 Z"/>
+      <path d="M45 53 L44 61 L50 54 Z"/>
+    </g>
+    <!-- lower fangs rising from the mandible -->
+    <g fill="#cdc8b8" stroke="#0d0f16" stroke-width="1">
+      <path d="M20 70 L23 63 L27 70 Z"/>
+      <path d="M30 66 L33 59 L37 66 Z"/>
+      <path d="M40 63 L43 57 L47 63 Z"/>
+    </g>
+
+    <!-- ===== INNER PHARYNGEAL JAW ("tongue") — side profile, lunging out ===== -->
+    <!-- muscular segmented stalk (centred on y60, hinged at x18) -->
+    <path d="M52 56.5 C42 57.2 30 57.6 18 57.8 L18 62.2 C30 62.4 42 62.8 52 63.5 Z" fill="#3a3f4d"/>
+    <path d="M50 58 C40 58.5 28 58.9 20 59" fill="none" stroke="#5a5476" stroke-width="1.2" opacity="0.85"/>
+    <!-- stalk segment ridges -->
+    <g fill="none" stroke="#0d0f16" stroke-width="0.9" opacity="0.85">
+      <path d="M46 57.2 L46 63 M38 57.5 L38 63.1 M30 57.7 L30 62.9 M22 57.9 L22 62.5"/>
+    </g>
+    <!-- dark inner maw between the two mini-jaws (profile, centred on y60) -->
+    <path d="M6 57.6 L17 58.2 L17 61.8 L7 62.4 C3 61 3 59 6 57.6 Z" fill="#0f0b16" stroke="#0d0f16" stroke-width="1.1"/>
+    <!-- upper mini-jaw (hinges at the stalk tip) -->
+    <path d="M18 57.8 C12 56.6 6 56.4 2 57 C6 58 12 58.4 18 59 Z" fill="#c7ccd6" stroke="#0d0f16" stroke-width="1.2"/>
+    <!-- lower mini-jaw (hinges at the stalk tip) -->
+    <path d="M18 62.2 C12 63.4 6 63.6 3 63 C7 62 12 61.6 18 61 Z" fill="#b8bcc6" stroke="#0d0f16" stroke-width="1.2"/>
+    <!-- upper teeth pointing down -->
+    <g fill="#eef0f4" stroke="#0d0f16" stroke-width="0.55">
+      <path d="M7 58.3 L6 60 L9 58.6 Z"/>
+      <path d="M12 58.5 L11.5 60.2 L14 58.8 Z"/>
+      <path d="M16.5 58.8 L16.5 60.2 L18 59 Z"/>
+    </g>
+    <!-- lower teeth pointing up -->
+    <g fill="#e2e5eb" stroke="#0d0f16" stroke-width="0.55">
+      <path d="M7.5 61.7 L8.5 60 L11 61.6 Z"/>
+      <path d="M13 61.6 L14 60.1 L16 61.5 Z"/>
+    </g>
+  </g>
+</svg>

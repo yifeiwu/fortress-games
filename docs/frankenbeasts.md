@@ -16,8 +16,8 @@ parts matters more than reflexes.
 | Phase | Duration | What happens |
 | --- | --- | --- |
 | **Pick** | 60s | Both players secretly choose one Head, one Body, and one Tail, then **Lock In**. When both lock in (or the timer ends) the beasts are assembled. Unpicked slots are filled randomly. |
-| **Fight round** | 30s | Each player selects one action. Nothing happens until the timer ends — then both actions resolve **simultaneously**. If you don't choose, you auto-`Pass`. |
-| **Reveal** | 5s | Both chosen actions and the updated HP bars are shown, then the next fight round begins. |
+| **Fight round** | 15s | Each player selects one action. Nothing happens until the timer ends — then both actions resolve **simultaneously**. If you don't choose, you auto-`Pass`. |
+| **Reveal** | 7s | Both chosen actions and the updated HP bars are shown, then the next fight round begins. |
 | **Finished** | — | A winner (or draw) is declared. The host can start a rematch. |
 
 Your beast's **max HP** is the sum of the HP of its three parts. Your available
@@ -83,8 +83,6 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
   Re-applying poison adds +2 damage per turn and refreshes to the longest
   duration (it does not extend additively).
 - **Roar** 🦁 — `+bonus` to all your attacks for a set number of turns.
-- **Poison resistance** (Toad Body) — negates the **first** source of poison
-  applied to you; subsequent poison lands normally.
 
 ---
 
@@ -102,6 +100,7 @@ final damage = max(0, base + roarBonus − targetReduction + targetAmplify)
 | Hawk Head | 7 | **Peck** — 4 dmg | −3 incoming dmg |
 | Dragon Head | 5 | **Fire Breath** — 9 dmg; **Terrify** — block the opponent's attack if it deals ≤5 | — |
 | Goldfish Head | 4 | **Bubble** — 1 dmg | — |
+| Alien Head | 9 | **Headbite** — 6 dmg | — |
 
 ### Bodies
 

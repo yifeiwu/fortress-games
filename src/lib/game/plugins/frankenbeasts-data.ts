@@ -172,6 +172,22 @@ const DRAGON_HEAD: FBPart = {
   passives: []
 };
 
+const ALIEN_HEAD: FBPart = {
+  id: "alien_head",
+  slot: "head",
+  name: "Alien Head",
+  hp: 9,
+  abilities: [
+    {
+      id: "headbite",
+      name: "Headbite",
+      description: "Deal 6 damage.",
+      effects: [{ kind: "damage", amount: 6 }]
+    }
+  ],
+  passives: []
+};
+
 // ─── Bodies ───────────────────────────────────────────────────────────────────
 
 const CRAB_SHELL: FBPart = {
@@ -446,6 +462,7 @@ export const FB_PARTS: FBPart[] = [
   HAWK_HEAD,
   DRAGON_HEAD,
   GOLDFISH_HEAD,
+  ALIEN_HEAD,
   CRAB_SHELL,
   TOAD_BODY,
   THORNED_BODY,
