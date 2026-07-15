@@ -338,6 +338,83 @@ export async function purgeStaleRuntimeStateRows(olderThanIso: string): Promise<
   }
 }
 
+/**
+ * Hard-deletes every room except the {@link RECENT_ROOMS_TO_KEEP} most-recently
+ * touched ones, along with their chat and presence rows. Unlike
+ * {@link purgeStaleRuntimeStateRows} (which only reaps idle rooms past the TTL),
+ * this enforces a hard cap on the room fleet so the table never keeps more than
+ * the newest N rooms.
+ *
+ * Rooms with a presence row touched at/after `activeSinceIso` are always
+ * protected, even when they fall outside the newest N, so a busy room mid-game
+ * is never pruned out from under its players.
+ *
+ * Returns the number of rooms that were pruned.
+ */
+export async function pruneRoomsKeepingNewest(
+  keep: number = RECENT_ROOMS_TO_KEEP,
+  activeSinceIso?: string
+): Promise<number> {
+  const client = getSupabaseServerClient();
+
+  const { data: recentRooms, error: recentRoomsError } = await client
+    .from("room_runtime_state")
+    .select("room_code")
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(keep);
+  if (recentRoomsError) {
+    throw new Error(`Failed to read recent rooms: ${recentRoomsError.message}`);
+  }
+  const recentRoomCodes = (recentRooms ?? []).map((row) => row.room_code as string);
+
+  let activeRoomCodes: string[] = [];
+  if (activeSinceIso) {
+    const { data: freshPresence, error: presenceError } = await client
+      .from("room_presence_state")
+      .select("room_code")
+      .gte("updated_at", activeSinceIso)
+      .is("deleted_at", null);
+    if (presenceError) {
+      throw new Error(`Failed to read active presence: ${presenceError.message}`);
+    }
+    activeRoomCodes = (freshPresence ?? []).map((row) => row.room_code as string);
+  }
+
+  const keepRoomCodes = [...new Set([...recentRoomCodes, ...activeRoomCodes])];
+
+  let staleRoomQuery = client.from("room_runtime_state").select("room_code").is("deleted_at", null);
+  if (keepRoomCodes.length) {
+    // room_code is constrained to ^[A-Z]{6}$, so this list is safe to inline.
+    staleRoomQuery = staleRoomQuery.not("room_code", "in", `(${keepRoomCodes.join(",")})`);
+  }
+  const { data: staleRooms, error: staleRoomsError } = await staleRoomQuery;
+  if (staleRoomsError) {
+    throw new Error(`Failed to read prunable room runtime state: ${staleRoomsError.message}`);
+  }
+  const staleRoomCodes = [...new Set((staleRooms ?? []).map((row) => row.room_code as string))];
+  if (!staleRoomCodes.length) {
+    return 0;
+  }
+
+  const [rooms, chats, presence] = await Promise.all([
+    client.from("room_runtime_state").delete().in("room_code", staleRoomCodes),
+    client.from("room_chat_state").delete().in("room_code", staleRoomCodes),
+    client.from("room_presence_state").delete().in("room_code", staleRoomCodes)
+  ]);
+  if (rooms.error) {
+    throw new Error(`Failed to prune room runtime state: ${rooms.error.message}`);
+  }
+  if (chats.error) {
+    throw new Error(`Failed to prune room chat state: ${chats.error.message}`);
+  }
+  if (presence.error) {
+    throw new Error(`Failed to prune room presence state: ${presence.error.message}`);
+  }
+
+  return staleRoomCodes.length;
+}
+
 export async function clearVersionedRuntimeStateRows(): Promise<void> {
   const client = getSupabaseServerClient();
   const [rooms, sessions, chats, presence] = await Promise.all([

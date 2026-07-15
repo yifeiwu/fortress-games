@@ -14,7 +14,7 @@ import type { GameActionPayload } from "@/lib/game/contracts";
 import { MAX_ROOM_PLAYERS } from "@/lib/constants";
 import type { GameStore } from "@/lib/store/game-store";
 import { getSupabaseGameStore } from "@/lib/store/supabase-store";
-import { isRuntimeStateConflictError, purgeStaleRuntimeStateRows } from "@/lib/supabase/runtime-state";
+import { isRuntimeStateConflictError, pruneRoomsKeepingNewest, purgeStaleRuntimeStateRows } from "@/lib/supabase/runtime-state";
 import type { ChatMessage, Player, PlayerSession, Room } from "@/lib/types";
 import { createRoomCode, randomId } from "@/lib/utils/ids";
 
@@ -674,6 +674,18 @@ class GameSessionService {
   async purgeStaleRuntimeState(olderThanMs: number = ROOM_INACTIVITY_TTL_MS) {
     const cutoff = new Date(Date.now() - olderThanMs).toISOString();
     await purgeStaleRuntimeStateRows(cutoff);
+  }
+
+  /**
+   * Hard cap on the room fleet: keep only the newest `keep` rooms (by last
+   * activity) plus any room with a recent heartbeat, and drop the rest along
+   * with their chat/presence rows. Rooms active within the inactivity window are
+   * always protected so a busy game is never pruned mid-session. Returns the
+   * number of rooms pruned.
+   */
+  async pruneRoomsToNewest(keep?: number, activeWithinMs: number = ROOM_INACTIVITY_TTL_MS): Promise<number> {
+    const activeSince = new Date(Date.now() - activeWithinMs).toISOString();
+    return pruneRoomsKeepingNewest(keep, activeSince);
   }
 
   async resetForTests() {
