@@ -383,15 +383,19 @@ class GameSessionService {
   }
 
   async leaveRoomForSession(code: string, sessionId: string) {
-    return this.withConflictRetry(async () => {
+    const room = await this.withConflictRetry(async () => {
       const roomCode = await this.ensureRoomAndSessionHydrated(code, sessionId);
       const playerId = this.sessions.requirePlayer(sessionId, roomCode);
-      const room = this.leaveRoom(roomCode, playerId);
+      const nextRoom = this.leaveRoom(roomCode, playerId);
       this.sessions.clearPlayer(sessionId);
-      // Runtime cleanup is cron-owned; request paths no longer reap room/session rows.
       await this.persistStore();
-      return room;
+      return nextRoom;
     });
+    // A player just left, so opportunistically reap stale rows and cap the fleet
+    // to the newest rooms. Fire-and-forget off the response path so the leaving
+    // player isn't blocked by the sweep, and so it runs even without the cron.
+    this.triggerBackgroundCleanup();
+    return room;
   }
 
   leaveRoom(code: string, playerId: string) {
@@ -686,6 +690,28 @@ class GameSessionService {
   async pruneRoomsToNewest(keep?: number, activeWithinMs: number = ROOM_INACTIVITY_TTL_MS): Promise<number> {
     const activeSince = new Date(Date.now() - activeWithinMs).toISOString();
     return pruneRoomsKeepingNewest(keep, activeSince);
+  }
+
+  /**
+   * Routine housekeeping: reap rows idle past the TTL, then cap the fleet to the
+   * newest rooms (active rooms protected). Shared by the cron and the post-leave
+   * trigger so both paths keep the tables tidy. Returns the number of rooms
+   * pruned by the cap step.
+   */
+  async runRoutineCleanup(keep?: number): Promise<number> {
+    await this.purgeStaleRuntimeState();
+    return this.pruneRoomsToNewest(keep);
+  }
+
+  /**
+   * Fire-and-forget wrapper around {@link runRoutineCleanup}: kicks off cleanup
+   * without blocking the caller and swallows failures so a sweep error never
+   * becomes an unhandled rejection or breaks the user action that triggered it.
+   */
+  private triggerBackgroundCleanup(keep?: number): void {
+    void this.runRoutineCleanup(keep).catch((error) => {
+      console.error("Background runtime-state cleanup failed:", error);
+    });
   }
 
   async resetForTests() {

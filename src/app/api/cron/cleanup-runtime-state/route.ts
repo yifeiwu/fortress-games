@@ -20,14 +20,9 @@ export async function GET(request: Request) {
 
   const service = getGameSessionService();
 
-  // TTL cleanup: purge rows idle past the inactivity window, so live rooms and
-  // recently-active sessions survive a cron run.
-  await service.purgeStaleRuntimeState();
-
-  // Hard cap: after the TTL sweep, keep only the newest rooms and drop the rest
-  // (with their chat/presence rows) so the fleet never grows unbounded. Vercel's
-  // Hobby plan only runs one cron per day, so both steps share this endpoint.
-  const prunedRooms = await service.pruneRoomsToNewest(ROOMS_TO_KEEP);
+  // TTL sweep + hard cap in one pass. The same routine also runs opportunistically
+  // when a player leaves a room, so cleanup happens even if this cron doesn't fire.
+  const prunedRooms = await service.runRoutineCleanup(ROOMS_TO_KEEP);
 
   return NextResponse.json({
     ok: true,
